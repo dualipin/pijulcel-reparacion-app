@@ -116,14 +116,15 @@ export class ListaPedidosComponent implements OnInit {
     await actionSheet.present();
   }
 
-  getImage(img: string): string {
+  async getImage(img: string): Promise<string> {
     let isWeb = this.storServ.getIsWeb();
     if(isWeb){
       let data = localStorage.getItem(img);
       if(data) return data;
-      else ""
+      else return "";
+    } else {
+      return this.storServ.getNativeImage(img);
     }
-    return "";
   }
 
   eliminarPedido(pedido: Pedido) {

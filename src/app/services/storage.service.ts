@@ -163,4 +163,14 @@ export class StorageService {
       reader.readAsDataURL(blob);
     });
   }
+
+  async getNativeImage(fileName: string): Promise<string> {
+    const result = await Filesystem.readFile({
+      path: fileName,
+      directory: Directory.Data
+    });
+
+    // Esto devuelve el contenido en base64
+    return `data:image/jpeg;base64,${result.data}`;
+  }
 }
