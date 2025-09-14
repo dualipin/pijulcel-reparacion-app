@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class DbnameVersionService {
   private _dbNameVersionDict: Map<string, number> = new Map();
 

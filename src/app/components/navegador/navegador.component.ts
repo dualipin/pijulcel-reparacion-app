@@ -1,0 +1,23 @@
+import { Component } from '@angular/core';
+import { addIcons } from 'ionicons';
+import { apps, addCircle, settings } from 'ionicons/icons';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { IonicModule } from '@ionic/angular';
+import { FormsModule} from '@angular/forms';
+
+@Component({
+  selector: 'app-navegador',
+  templateUrl: './navegador.component.html',
+  styleUrls: ['./navegador.component.scss'],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, IonicModule, FormsModule],
+  standalone: true,
+})
+export class NavegadorComponent {
+
+  constructor() {
+    addIcons({ apps, addCircle, settings });
+  }
+
+}

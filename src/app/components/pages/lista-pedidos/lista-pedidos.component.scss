@@ -1,0 +1,24 @@
+.pedido-img {
+  border: 1px solid #ccc; /* borde gris claro */
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* cubre todo el espacio sin deformar */
+  border-radius: 8px; /* opcional, esquinas redondeadas */
+}
+
+ion-fab {
+  bottom: 2vh; /* ajusta según tu teléfono */
+}
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60%;
+  color: #888;
+  text-align: center;
+}
+
+.empty-list ion-icon {
+  margin-bottom: 8px;
+}

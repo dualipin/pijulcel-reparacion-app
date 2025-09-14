@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <div class="title-center">
+        <ion-icon name="apps"></ion-icon>
+        <span>Lista de pedidos</span>
+      </div>
+    </ion-title>
+    <ion-progress-bar *ngIf="this.isLoad" type="indeterminate"></ion-progress-bar>
+  </ion-toolbar>
+  <!-- 🔎 Barra de búsqueda -->
+  <ion-toolbar>
+    <ion-searchbar slot="start" placeholder="Código, teléfono o cliente..." (ionInput)="filtrarPedidos($event)">
+    </ion-searchbar>
+    <!-- Filtrar por tiempo -->
+    <ion-button slot="end" id="open-action-sheet">Filtrar</ion-button>
+    <ion-action-sheet trigger="open-action-sheet" header="Filtrar por..." [buttons]="filtrar"></ion-action-sheet>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-list *ngIf="pedidosFiltrados.length > 0; else sinPedidos">
+    <ion-item *ngFor="let pedido of pedidosFiltrados">
+      <!-- Imagen desde FileSystem -->
+      <ion-thumbnail slot="start" *ngIf="pedido.img_1">
+        <img [src]="getImage(pedido.img_1)" alt="Pedido" class="pedido-img" />
+      </ion-thumbnail>
+
+      <!-- Datos del pedido -->
+      <ion-label>
+        <h2>{{ pedido.device_name }}</h2>
+        <p>Código: {{ pedido.bar_code }}</p>
+        <p>Tel: {{ pedido.tel_cli }}</p>
+        <p>Fecha: {{ pedido.created | date:'short' }}</p>
+      </ion-label>
+
+      <!-- Botón de acciones -->
+      <ion-buttons slot="end">
+        <ion-button (click)="openAcciones(pedido)">
+          <ion-icon name="ellipsis-vertical"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+
+
+  <!-- Template alternativo cuando no hay datos -->
+  <ng-template #sinPedidos>
+    <div class="empty-list">
+      <ion-icon name="information-circle-outline" size="large"></ion-icon>
+      <p>No hay pedidos pendientes</p>
+    </div>
+  </ng-template>
+  <!-- Alerta genérica -->
+  <ion-alert [isOpen]="this.msgServ.isAlertOpenStatus()" [header]="this.msgServ.header" [message]="this.msgServ.message"
+    [buttons]="this.msgServ.buttons" (didDismiss)="this.msgServ.setAlertStatus(false)"></ion-alert>
+</ion-content>

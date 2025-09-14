@@ -1,0 +1,20 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <div class="title-center">
+        <ion-icon name="settings"></ion-icon>
+        <span>Configurar impresora</span>
+      </div>
+    </ion-title>
+    <ion-progress-bar *ngIf="this.isLoad" type="indeterminate"></ion-progress-bar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" style="height: 100%;">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  <div class="container">
+    Hola
+  </div>
+</ion-content>

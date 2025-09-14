@@ -1,0 +1,123 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>
+      <div class="title-center">
+        <ion-icon name="add-circle"></ion-icon>
+        <span>Nuevo pedido</span>
+      </div>
+    </ion-title>
+    <ion-progress-bar *ngIf="this.isLoad" type="indeterminate"></ion-progress-bar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <form [formGroup]="pedidoForm" (ngSubmit)="submitPedido()">
+
+    <!-- Agrupar en tarjeta -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="document-text-outline"></ion-icon>
+          Detalles del Pedido
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+
+        <!-- Código de barra -->
+        <ion-input class="item-form" label="Código de barra" label-placement="floating" fill="outline"
+          formControlName="bar_code" type="number" placeholder="1234567890">
+        </ion-input>
+
+        <!-- Nombre del cliente -->
+        <ion-input class="item-form" label="Nombre del cliente" label-placement="floating" fill="outline"
+          formControlName="name_cli" type="text" placeholder="Juán Pérez">
+        </ion-input>
+
+        <!-- Teléfono -->
+        <ion-input class="item-form" label="Teléfono" label-placement="floating" fill="outline"
+          formControlName="tel_cli" type="number" placeholder="9361234567">
+        </ion-input>
+
+        <!-- Dispositivo -->
+        <ion-input class="item-form" label="Dispositivo" label-placement="floating" fill="outline"
+          formControlName="device_name" type="text" placeholder="Motorola G20 Plus">
+        </ion-input>
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Subir imágenes -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="image-outline"></ion-icon>
+          Imágenes
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+
+        <ion-text color="medium">Máx. 2 imágenes</ion-text><br />
+
+        <!-- Botón para abrir cámara -->
+        <ion-button color="secondary" expand="block" (click)="tomarFoto()">
+          <ion-icon name="camera"></ion-icon>
+          Tomar Foto
+        </ion-button>
+
+        <!-- Previews -->
+        <div class="image-previews" *ngIf="imagenesPreview.length > 0">
+          <ng-container *ngFor="let img of imagenesPreview; let i = index">
+            <div class="img-container">
+              <img [src]="img" class="preview-img" />
+
+              <!-- Botón para eliminar -->
+              <ion-icon name="trash" class="delete-icon" (click)="deleteImage(i)">
+              </ion-icon>
+            </div>
+          </ng-container>
+
+        </div>
+
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Subir audio -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="mic-outline"></ion-icon>
+          Descripción del problema
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button (click)="toggleRecording()" color="primary" size="small">
+          <ion-icon slot="start" [name]="isRecording ? 'stop-circle-outline' : 'mic-outline'"></ion-icon>
+          {{ isRecording ? 'Detener' : 'Grabar' }}
+        </ion-button>
+
+        <div *ngIf="audioURL" class="audio-player">
+          <audio [src]="audioURL" controls></audio>
+        </div>
+        <!-- Descripción -->
+        <ion-textarea auto-grow class="item-form" label="Descripción del problema" label-placement="floating"
+          fill="outline" formControlName="prob_texto" placeholder="Max 510 caracteres" style="margin-top: 20px;">
+        </ion-textarea>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Botón enviar -->
+    <ion-button expand="block" color="secondary" size="large" type="submit"
+      [disabled]="pedidoForm.invalid || this.imagenesPreview.length <= 0 || (this.pedidoForm.value.prob_texto.trim() === '' && !this.audioBlob)">
+      Registrar Pedido
+    </ion-button>
+
+  </form>
+  <ion-alert [isOpen]="this.msgServ.isAlertOpenStatus()" [header]="this.msgServ.header" [message]="this.msgServ.message"
+    [buttons]="this.msgServ.buttons" (didDismiss)="this.msgServ.setAlertStatus(false)"></ion-alert>
+</ion-content>
