@@ -6,7 +6,7 @@ import { PedidoUpgradeStatements } from '../upgrades/pedido.upgrade.statements';
 import { Pedido } from '../models/pedido';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
-import { Directory, Filesystem } from '@capacitor/filesystem';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 
 @Injectable({
   providedIn: 'root'
@@ -74,10 +74,12 @@ export class StorageService {
   }
   async addUser(pedido: Pedido) {
     const sql = `INSERT INTO pedidos
-    (bar_code,name_cli,tel_cli,device_name,prob_texto,
-    prob_audio,img_1,img_2,estatus,created,updated)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?);`;
+  (bar_code,name_cli,tel_cli,device_name,prob_texto,
+  prob_audio,img_1,img_2,estatus,created,updated)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?);`;
+
     if (this.isWeb) {
+      // WEB → usar localStorage
       const img1Key = pedido.bar_code + "_1";
       await this.saveWebLocalStore(img1Key, pedido.img_1);
       pedido.img_1 = img1Key;
@@ -93,20 +95,64 @@ export class StorageService {
         await this.saveWebLocalStore(audioKey, pedido.prob_audio);
         pedido.prob_audio = audioKey;
       }
-    }
-    else { // Si es nativo
+
+    } else {
+      // NATIVO → guardar en Filesystem
       pedido.img_1 = await this.saveNativeImage(pedido.img_1);
+
       if (pedido.img_2 !== '')
         pedido.img_2 = await this.saveNativeImage(pedido.img_2);
 
       if (pedido.prob_audio !== '')
         pedido.prob_audio = await this.saveNativeImage(pedido.prob_audio);
     }
-    await this.db.run(sql, [pedido.bar_code, pedido.name_cli, pedido.tel_cli,
-    pedido.device_name, pedido.prob_texto, pedido.prob_audio,
-    pedido.img_1, pedido.img_2, pedido.estatus,
-    pedido.created, pedido.updated]);
+
+    await this.db.run(sql, [
+      pedido.bar_code,
+      pedido.name_cli,
+      pedido.tel_cli,
+      pedido.device_name,
+      pedido.prob_texto,
+      pedido.prob_audio,
+      pedido.img_1,
+      pedido.img_2,
+      pedido.estatus,
+      pedido.created,
+      pedido.updated
+    ]);
+
     await this.getUsers();
+  }
+
+  private async saveNativeImage(imgPath: string): Promise<string> {
+
+    // Leer el archivo original como base64
+    const fileData = await Filesystem.readFile({
+      path: imgPath
+    });
+
+    const nombreArchivo = `foto_${Date.now()}.jpeg`;
+
+    // Guardar en Documents
+    const savedFile = await Filesystem.writeFile({
+      path: nombreArchivo,
+      data: fileData.data,
+      directory: Directory.Documents
+    });
+
+    return savedFile.uri; // guardas solo el nombre en BD
+  }
+
+
+  async getNativeImage(fileName: string): Promise<string> {
+    // 🔹 Devuelve una URI local (más eficiente que base64)
+    const uriResult = await Filesystem.getUri({
+      path: fileName,
+      directory: Directory.Data
+    });
+
+    return Capacitor.convertFileSrc(uriResult.uri);
+    // Esto convierte la ruta nativa en algo que <img> pueda mostrar
   }
 
   async updateUserById(id: string, active: string) {
@@ -120,6 +166,41 @@ export class StorageService {
     await this.getUsers();
   }
 
+  deleteFileWeb(id: string) {
+    localStorage.removeItem(id);
+    console.log("Eliminado: ", id);
+  }
+
+  async eliminarImagen(path: string) {
+    try {
+      await Filesystem.deleteFile({
+        path,
+        directory: Directory.Documents
+      });
+      return "Imagen eliminada: " + path;
+    } catch (error) {
+      return "error";
+    }
+  }
+
+  async guardarAudio(base64Audio: string) {
+    const nombreArchivo = `audio_${Date.now()}.webm`;
+
+    try {
+      const resultado = await Filesystem.writeFile({
+        path: nombreArchivo,
+        data: base64Audio, // base64 sin codificación
+        directory: Directory.Documents
+      });
+
+      console.log('🎙️ Audio guardado en:', resultado.uri);
+      return resultado.uri;
+    } catch (error) {
+      console.error('❌ Error al guardar el audio:', error);
+      return "error";
+    }
+  }
+
   private async saveWebLocalStore(name: string, imgBlob: Blob | string) {
     let base64: string;
     if (imgBlob instanceof Blob) {
@@ -128,27 +209,6 @@ export class StorageService {
       base64 = imgBlob;
     }
     localStorage.setItem(name, base64);
-  }
-
-
-  private async saveNativeImage(imgBlob: Blob | string): Promise<string> {
-    const nameUnique = Date.now().toString();
-
-    let base64Data: string;
-
-    if (imgBlob instanceof Blob) {
-      base64Data = await this.blobToBase64(imgBlob);
-    } else {
-      base64Data = imgBlob;
-    }
-
-    await Filesystem.writeFile({
-      path: nameUnique,
-      data: base64Data,
-      directory: Directory.Data
-    });
-
-    return nameUnique;
   }
 
   // 🔹 Convertir Blob → base64
@@ -164,13 +224,4 @@ export class StorageService {
     });
   }
 
-  async getNativeImage(fileName: string): Promise<string> {
-    const result = await Filesystem.readFile({
-      path: fileName,
-      directory: Directory.Data
-    });
-
-    // Esto devuelve el contenido en base64
-    return `data:image/jpeg;base64,${result.data}`;
-  }
 }

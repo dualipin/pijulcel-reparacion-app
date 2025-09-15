@@ -72,7 +72,7 @@ export class ListaPedidosComponent implements OnInit {
   pedidosFiltrados: Pedido[]; // copia inicial
 
   constructor(private actionSheetCtrl: ActionSheetController, public msgServ: MessageService, private storServ: StorageService) {
-    this.pedidosFiltrados = [...this.pedidos];
+    this.pedidosFiltrados = [];
     this.isLoad = true;
     addIcons({ apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
   }
@@ -92,10 +92,10 @@ export class ListaPedidosComponent implements OnInit {
           text: 'WhatsApp',
           icon: 'logo-whatsapp',
           handler: () => {
-            /*const phone = pedido.tel_cli;
-            const url = `https://wa.me/52${phone}?text=Hola%20${pedido.name_cli},%20sobre%20tu%20pedido%20${pedido.bar_code}`;
-            window.open(url, '_blank');*/
-            this.msgServ.showScreenAlert('¡Whatsapp!', 'Enviar mensaje a ' + pedido.tel_cli, ['Aceptar']);
+            const phone = pedido.tel_cli;
+            const url = `https://wa.me/529361165168?text=Hola%20${pedido.name_cli},%20sobre%20tu%20pedido%20${pedido.bar_code}`;
+            window.open(url, '_blank');
+            //this.msgServ.showScreenAlert('¡Whatsapp!', 'Enviar mensaje a ' + pedido.tel_cli, ['Aceptar']);
           }
         },
         {
@@ -116,20 +116,43 @@ export class ListaPedidosComponent implements OnInit {
     await actionSheet.present();
   }
 
-  async getImage(img: string): Promise<string> {
+  getImage(img: string): string {
     let isWeb = this.storServ.getIsWeb();
-    if(isWeb){
+    if (isWeb) {
       let data = localStorage.getItem(img);
-      if(data) return data;
+      if (data) {
+        return data;
+      }
       else return "";
     } else {
-      return this.storServ.getNativeImage(img);
+      return Capacitor.convertFileSrc(img);
     }
   }
 
-  eliminarPedido(pedido: Pedido) {
+  async eliminarPedido(pedido: Pedido) {
     this.storServ.deleteUserById(pedido.bar_code);
+
+    if (this.storServ.getIsWeb()) {
+      this.storServ.deleteFileWeb(pedido.bar_code + "_1");
+      if (pedido.img_2)
+        this.storServ.deleteFileWeb(pedido.bar_code + "_2");
+    } else {
+      let res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_1));
+      if(res === "error")
+        this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
+
+      if (pedido.img_2 !== ''){
+        res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_2));
+        if(res === "error")
+          this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
+      }
+    }
     this.msgServ.showScreenAlert('¡Eliminado!', 'Pedido eliminado correctamente');
+  }
+
+  extractUri(uri: string): string {
+    const partes = uri.split('/');
+    return partes[partes.length - 1];
   }
 
   ngOnInit() {
@@ -145,7 +168,11 @@ export class ListaPedidosComponent implements OnInit {
       ).subscribe(data => {
         console.log(data);
         this.pedidos = data; // Update the user list when the data changes
-        this.pedidosFiltrados = data;
+        this.pedidosFiltrados = [];
+        for (let i = this.pedidos.length-1; i >= 0; i--) {
+          const element:Pedido = this.pedidos[i];
+          this.pedidosFiltrados.push(element);
+        }
       });
 
     } catch (err) {

@@ -9,6 +9,7 @@ import { VoiceRecorder } from 'capacitor-voice-recorder';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { StorageService } from 'src/app/services/storage.service';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-registrar-pedido',
@@ -25,7 +26,7 @@ export class RegistrarPedidoComponent implements OnInit {
 
   isRecording = false;
 
-  imagenesPreview: string[] = [];
+  imagenesPreview: any[] = [];
 
   audioBlob!: Blob;
   audioURL!: string;
@@ -45,21 +46,45 @@ export class RegistrarPedidoComponent implements OnInit {
   }
 
 
-  async tomarFoto() {
+  getImage(image: any) {
+
+    if (Capacitor.getPlatform() === 'web')
+      return image;
+
+    else
+      return Capacitor.convertFileSrc(image);
+
+  }
+
+
+  async tomarFoto(desdeGaleria: boolean) {
     if (this.imagenesPreview.length >= 2) {
       this.msgServ.showScreenAlert('Límite alcanzado', 'Solo se permiten 2 imágenes por pedido');
       return;
     }
     try {
       const image = await Camera.getPhoto({
-        quality: 90,
-        resultType: CameraResultType.DataUrl, // Devuelve base64
-        source: CameraSource.Camera // Abre la cámara directamente
+        quality: 50,
+        allowEditing: false,
+        resultType: Capacitor.getPlatform() === 'web' ? CameraResultType.DataUrl : CameraResultType.Uri,
+        source: desdeGaleria ? CameraSource.Photos : CameraSource.Camera
       });
 
-      if (image.dataUrl) {
-        this.imagenesPreview.push(image.dataUrl);
+      let imgToSave: string | Blob;
+
+      if (Capacitor.getPlatform() === 'web' && image.dataUrl) {
+        imgToSave = image.dataUrl; // base64 para web
+      } else if (image.path) {
+        // nativo
+        imgToSave = image.path;
+      } else {
+        this.msgServ.showScreenAlert('¡Algo paso!', 'Algo paso al obtener la foto');
+        return;
       }
+
+      console.log(imgToSave);
+
+      this.imagenesPreview.push(imgToSave);
 
     } catch (error) {
       console.error('Error al tomar la foto', error);
@@ -116,7 +141,6 @@ export class RegistrarPedidoComponent implements OnInit {
   }
 
   async submitPedido() {
-
 
     // 3️⃣ Crear objeto del pedido
     const pedido: Pedido = {

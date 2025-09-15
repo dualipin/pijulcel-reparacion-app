@@ -2,7 +2,7 @@
   border: 1px solid #ccc; /* borde gris claro */
   width: 100%;
   height: 100%;
-  object-fit: cover; /* cubre todo el espacio sin deformar */
+  object-fit: contain; /* cubre todo el espacio sin deformar */
   border-radius: 8px; /* opcional, esquinas redondeadas */
 }
 

@@ -28,14 +28,14 @@
   <ion-list *ngIf="pedidosFiltrados.length > 0; else sinPedidos">
     <ion-item *ngFor="let pedido of pedidosFiltrados">
       <!-- Imagen desde FileSystem -->
-      <ion-thumbnail slot="start" *ngIf="pedido.img_1">
+      <ion-thumbnail slot="start" *ngIf="pedido.img_1" style="height: 100%;">
         <img [src]="getImage(pedido.img_1)" alt="Pedido" class="pedido-img" />
       </ion-thumbnail>
 
       <!-- Datos del pedido -->
       <ion-label>
-        <h2>{{ pedido.device_name }}</h2>
-        <p>Código: {{ pedido.bar_code }}</p>
+        <h2 style="font-weight: bold;">{{ pedido.bar_code }}</h2>
+        <p style="font-weight: bold;">{{ pedido.name_cli }}</p>
         <p>Tel: {{ pedido.tel_cli }}</p>
         <p>Fecha: {{ pedido.created | date:'short' }}</p>
       </ion-label>

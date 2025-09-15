@@ -64,16 +64,21 @@
         <ion-text color="medium">Máx. 2 imágenes</ion-text><br />
 
         <!-- Botón para abrir cámara -->
-        <ion-button color="secondary" expand="block" (click)="tomarFoto()">
-          <ion-icon name="camera"></ion-icon>
+        <ion-button color="secondary" expand="block" (click)="tomarFoto(false)">
+          <ion-icon name="camera" style="margin-right: 1vh;"></ion-icon>
           Tomar Foto
+        </ion-button>
+        <!-- Botón para abrir galery -->
+        <ion-button color="danger" expand="block" (click)="tomarFoto(true)">
+          <ion-icon name="images" style="margin-right: 1vh;"></ion-icon>
+          Elegir de Galería
         </ion-button>
 
         <!-- Previews -->
         <div class="image-previews" *ngIf="imagenesPreview.length > 0">
           <ng-container *ngFor="let img of imagenesPreview; let i = index">
             <div class="img-container">
-              <img [src]="img" class="preview-img" />
+              <img [src]="getImage(img)" class="preview-img" />
 
               <!-- Botón para eliminar -->
               <ion-icon name="trash" class="delete-icon" (click)="deleteImage(i)">
