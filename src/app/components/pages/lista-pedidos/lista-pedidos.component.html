@@ -10,7 +10,8 @@
   </ion-toolbar>
   <!-- 🔎 Barra de búsqueda -->
   <ion-toolbar>
-    <ion-searchbar id="barSearch" slot="start" placeholder="Código, teléfono o cliente..." (ionInput)="filtrarPedidos($event)">
+    <ion-searchbar id="barSearch" slot="start" placeholder="Código, teléfono o cliente..."
+      (ionInput)="filtrarPedidos($event)">
     </ion-searchbar>
     <!-- Filtrar por tiempo -->
     <ion-button slot="end" id="open-action-sheet">Filtrar</ion-button>
@@ -34,7 +35,11 @@
 
       <!-- Datos del pedido -->
       <ion-label (click)="irDetalle(pedido.bar_code)">
-        <h2 style="font-weight: bold;">{{ pedido.bar_code }}</h2>
+        <!-- Estado con badge -->
+
+        <h2 style="display: flex; align-items: center; font-weight: bold; gap: 8px;">{{ pedido.bar_code }} <ion-badge [color]="getEstadoColor(pedido.estatus)" slot="end">
+          {{ pedido.estatus }}
+        </ion-badge></h2>
         <p style="font-weight: bold;">{{ pedido.name_cli }}</p>
         <p>Tel: {{ pedido.tel_cli }}</p>
         <p>Fecha: {{ pedido.created | date:'short' }}</p>
@@ -48,6 +53,7 @@
       </ion-buttons>
     </ion-item>
   </ion-list>
+
 
 
 

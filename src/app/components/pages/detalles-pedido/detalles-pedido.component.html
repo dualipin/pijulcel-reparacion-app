@@ -77,6 +77,7 @@
         <ng-container *ngIf="pedido.prob_audio !== ''">
           <audio [src]="getImage(pedido.prob_audio)" controls></audio>
         </ng-container>
+        <br/>
         <ng-container *ngIf="pedido.prob_texto !== ''">
           <ion-text color="dark">{{ pedido.prob_texto }}</ion-text>
         </ng-container>

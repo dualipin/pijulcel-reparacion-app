@@ -201,12 +201,29 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
           const element: Pedido = this.pedidos[i];
           this.pedidosFiltrados.push(element);
         }
+        this.pedidos = this.pedidosFiltrados;
       });
 
     } catch (err) {
       throw new Error(`Error: ${err}`);
     }
   }
+
+  getEstadoColor(estado: string): string {
+    switch (estado) {
+      case "Pendiente":
+        return "warning";   // amarillo
+      case "En proceso":
+        return "primary";   // azul
+      case "Listo":
+        return "tertiary";  // morado/verde según tema
+      case "Entregado":
+        return "success";   // verde
+      default:
+        return "medium";    // gris
+    }
+  }
+
 
   irDetalle(bar_code: string) {
     this.router.navigate(['/detalles', bar_code]);
