@@ -72,6 +72,25 @@ export class StorageService {
     await this.loadUsers();
     this.isPedidoReady.next(true);
   }
+  async getPedidoById(id: string): Promise<Pedido | null> {
+    try {
+      const result = await this.db.query(
+        'SELECT * FROM pedidos WHERE bar_code = ?;',
+        [id]
+      );
+
+      if (result.values && result.values.length > 0) {
+        return result.values[0] as Pedido;
+      } else {
+        return null; // No se encontró
+      }
+    } catch (error) {
+      console.error('❌ Error al obtener el pedido por ID:', error);
+      return null;
+    }
+  }
+
+
   async addUser(pedido: Pedido) {
     const sql = `INSERT INTO pedidos
   (bar_code,name_cli,tel_cli,device_name,prob_texto,
@@ -92,7 +111,7 @@ export class StorageService {
 
       if (pedido.prob_audio) {
         const audioKey = pedido.bar_code + "_audio";
-        await this.saveWebLocalStore(audioKey, pedido.prob_audio);
+        await this.saveWebLocalStore(audioKey, `data:audio/webm;base64,${pedido.prob_audio}`);
         pedido.prob_audio = audioKey;
       }
 
@@ -104,7 +123,7 @@ export class StorageService {
         pedido.img_2 = await this.saveNativeImage(pedido.img_2);
 
       if (pedido.prob_audio !== '')
-        pedido.prob_audio = await this.saveNativeImage(pedido.prob_audio);
+        pedido.prob_audio = await this.guardarAudio(pedido.prob_audio);
     }
 
     await this.db.run(sql, [
@@ -155,8 +174,8 @@ export class StorageService {
     // Esto convierte la ruta nativa en algo que <img> pueda mostrar
   }
 
-  async updateUserById(id: string, active: string) {
-    const sql = `UPDATE users SET active=${active} WHERE id=${id}`;
+  async updateStatusById(estatus: string, bar_code: string) {
+    const sql = `UPDATE pedidos SET estatus='${estatus}' WHERE bar_code='${bar_code}'`;
     await this.db.run(sql);
     await this.getUsers();
   }
@@ -201,27 +220,7 @@ export class StorageService {
     }
   }
 
-  private async saveWebLocalStore(name: string, imgBlob: Blob | string) {
-    let base64: string;
-    if (imgBlob instanceof Blob) {
-      base64 = await this.blobToBase64(imgBlob);
-    } else {
-      base64 = imgBlob;
-    }
+  private async saveWebLocalStore(name: string, base64: string) {
     localStorage.setItem(name, base64);
   }
-
-  // 🔹 Convertir Blob → base64
-  private blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        resolve(dataUrl.split(',')[1]); // quitamos "data:image/jpeg;base64,"
-      };
-      reader.readAsDataURL(blob);
-    });
-  }
-
 }

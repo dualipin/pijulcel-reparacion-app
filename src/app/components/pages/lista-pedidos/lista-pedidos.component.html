@@ -10,7 +10,7 @@
   </ion-toolbar>
   <!-- 🔎 Barra de búsqueda -->
   <ion-toolbar>
-    <ion-searchbar slot="start" placeholder="Código, teléfono o cliente..." (ionInput)="filtrarPedidos($event)">
+    <ion-searchbar id="barSearch" slot="start" placeholder="Código, teléfono o cliente..." (ionInput)="filtrarPedidos($event)">
     </ion-searchbar>
     <!-- Filtrar por tiempo -->
     <ion-button slot="end" id="open-action-sheet">Filtrar</ion-button>
@@ -33,7 +33,7 @@
       </ion-thumbnail>
 
       <!-- Datos del pedido -->
-      <ion-label>
+      <ion-label (click)="irDetalle(pedido.bar_code)">
         <h2 style="font-weight: bold;">{{ pedido.bar_code }}</h2>
         <p style="font-weight: bold;">{{ pedido.name_cli }}</p>
         <p>Tel: {{ pedido.tel_cli }}</p>

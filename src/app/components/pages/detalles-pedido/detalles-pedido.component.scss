@@ -1,0 +1,21 @@
+.title-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.problema {
+  margin: 12px 0;
+}
+
+.imagenes {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+
+  ion-img {
+    width: 45%;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+}

@@ -1,0 +1,113 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/list-pedidos"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="title-center">
+        <ion-icon name="construct"></ion-icon>
+        <span>Detalles del pedido</span>
+      </div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" style="height: 100%;">
+  <div class="container">
+    <!-- Información del Cliente -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="person-circle-outline"></ion-icon>
+          {{ pedido.name_cli }}
+        </ion-card-title>
+        <ion-card-subtitle>
+          <ion-icon name="call-outline"></ion-icon> {{ pedido.tel_cli }}
+        </ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+
+    <!-- Datos del Pedido -->
+    <ion-list inset>
+      <ion-item>
+        <ion-icon name="barcode-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Código de barras</ion-label>
+        <ion-note slot="end">{{ pedido.bar_code }}</ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="hardware-chip-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Dispositivo</ion-label>
+        <ion-note slot="end">{{ pedido.device_name }}</ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="flag-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Estatus</ion-label>
+        <ion-select slot="end" aria-label="Estado del pedido" [value]="pedido.estatus"
+          (ionChange)="chageStatus($event.detail.value, pedido.bar_code)">
+          <ion-select-option *ngFor="let estado of estatus" [value]="estado">
+            {{ estado }}
+          </ion-select-option>
+        </ion-select>
+
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="time-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Creado</ion-label>
+        <ion-note slot="end">{{ pedido.created | date:'short' }}</ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-icon name="refresh-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Actualizado</ion-label>
+        <ion-note slot="end">{{ pedido.updated | date:'short' }}</ion-note>
+      </ion-item>
+    </ion-list>
+
+    <!-- Problema Reportado -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="alert-circle-outline"></ion-icon> Problema reportado
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ng-container *ngIf="pedido.prob_audio !== ''">
+          <audio [src]="getImage(pedido.prob_audio)" controls></audio>
+        </ng-container>
+        <ng-container *ngIf="pedido.prob_texto !== ''">
+          <ion-text color="dark">{{ pedido.prob_texto }}</ion-text>
+        </ng-container>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Imágenes -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="images-outline"></ion-icon> Evidencia
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <ion-img [src]="getImage(pedido.img_1)" class="pedido-img"></ion-img>
+            </ion-col>
+            <ion-col size="6" *ngIf="pedido.img_2">
+              <ion-img [src]="getImage(pedido.img_2)" class="pedido-img"></ion-img>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card-content>
+
+    </ion-card>
+  </div>
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end" (click)="sendMessage()">
+    <ion-fab-button>
+      <ion-icon name="logo-whatsapp"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

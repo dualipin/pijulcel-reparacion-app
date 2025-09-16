@@ -13,7 +13,7 @@ export class PedidoUpgradeStatements {
             prob_audio TEXT CHECK(length(prob_audio) <= 100), --MAX 100 caracteres
             img_1 TEXT NOT NULL CHECK(length(img_1) <= 100), --MAX 100 caracteres
             img_2 TEXT CHECK(length(img_2) <= 100), --MAX 100 caracteres
-            estatus TEXT DEFAULT 'pendiente', --pendiente, en proceso, listo, entregado
+            estatus TEXT DEFAULT 'Pendiente', --Pendiente, En proceso, Listo, Entregado
             created DATETIME DEFAULT CURRENT_TIMESTAMP, -- Fecha de creación
             updated DATETIME DEFAULT CURRENT_TIMESTAMP -- Fecha de última actualización
         );

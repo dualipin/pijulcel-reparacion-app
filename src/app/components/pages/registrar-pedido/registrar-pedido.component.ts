@@ -29,16 +29,17 @@ export class RegistrarPedidoComponent implements OnInit {
   imagenesPreview: any[] = [];
 
   audioBlob!: Blob;
+  audioBase64!: string;
   audioURL!: string;
 
   constructor(private fb: FormBuilder, public msgServ: MessageService, private storServ: StorageService) {
     this.isLoad = true;
     this.pedidoForm = this.fb.group({
       bar_code: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(10)]],
-      name_cli: ['', Validators.required],
-      tel_cli: ['', Validators.required],
-      device_name: ['', Validators.required],
-      prob_texto: [''],
+      name_cli: ['', [Validators.required, Validators.maxLength(50)]],
+      tel_cli: ['', [Validators.required, Validators.maxLength(20)]],
+      device_name: ['', [Validators.required, Validators.maxLength(60)]],
+      prob_texto: ['', [Validators.maxLength(510)]],
     });
 
     this.generarCodigo();
@@ -108,9 +109,9 @@ export class RegistrarPedidoComponent implements OnInit {
 
       if (result.value && result.value.recordDataBase64) {
         // El plugin devuelve base64
-        const audioBase64 = result.value.recordDataBase64;
+        this.audioBase64 = result.value.recordDataBase64;
         // Convertir a Blob para enviar al backend
-        const byteCharacters = atob(audioBase64);
+        const byteCharacters = atob(this.audioBase64);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
@@ -148,11 +149,11 @@ export class RegistrarPedidoComponent implements OnInit {
       name_cli: this.pedidoForm.get('name_cli')?.value,
       tel_cli: this.pedidoForm.get('tel_cli')?.value.toString(),
       device_name: this.pedidoForm.get('device_name')?.value,
-      estatus: 'pendiente',
+      estatus: 'Pendiente',
       img_1: this.imagenesPreview[0],
       img_2: this.imagenesPreview[1] || '',
       prob_texto: this.pedidoForm.get('prob_texto')?.value,
-      prob_audio: this.audioURL || '',
+      prob_audio: this.audioBase64 || '',
       created: new Date().toISOString(),
       updated: new Date().toISOString(),
     };

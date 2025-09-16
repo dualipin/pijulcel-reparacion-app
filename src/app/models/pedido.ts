@@ -8,6 +8,6 @@ export interface Pedido {
   img_1: string;
   img_2: string;
   estatus: string;
-  created: string;
-  updated: string;
+  created: string | Date;
+  updated: string | Date;
 }

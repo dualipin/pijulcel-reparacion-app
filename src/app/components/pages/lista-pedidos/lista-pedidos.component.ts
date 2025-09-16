@@ -1,6 +1,6 @@
 import { MessageService } from 'src/app/services/message.service.service';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
 import { camera, checkbox, checkboxOutline, print, constructOutline, ellipsisVertical, hourglassOutline, logoWhatsapp, trash, layers, apps, informationCircleOutline } from 'ionicons/icons';
 import { Pedido } from 'src/app/models/pedido';
@@ -8,6 +8,7 @@ import { Capacitor } from '@capacitor/core';
 import { ActionSheetController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { StorageService } from 'src/app/services/storage.service';
 import { of, switchMap } from 'rxjs';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-lista-pedidos',
@@ -16,7 +17,7 @@ import { of, switchMap } from 'rxjs';
   imports: [IonicModule, CommonModule],
   standalone: true,
 })
-export class ListaPedidosComponent implements OnInit {
+export class ListaPedidosComponent implements OnInit, AfterViewInit {
 
   public isLoad: Boolean;
 
@@ -32,6 +33,7 @@ export class ListaPedidosComponent implements OnInit {
       icon: 'layers',
       handler: () => {
         console.log('Todos');
+        this.pedidosFiltrados = this.pedidos;
       }
     },
     {
@@ -39,6 +41,9 @@ export class ListaPedidosComponent implements OnInit {
       icon: 'hourglass-outline',
       handler: () => {
         console.log('Pendientes');
+        this.pedidosFiltrados = this.pedidos.filter(
+          (pedido) => pedido.estatus === "Pendiente"
+        );
       }
     },
     {
@@ -46,6 +51,9 @@ export class ListaPedidosComponent implements OnInit {
       icon: 'construct-outline',
       handler: () => {
         console.log('En proceso');
+        this.pedidosFiltrados = this.pedidos.filter(
+          (pedido) => pedido.estatus === "En proceso"
+        );
       }
     },
     {
@@ -53,6 +61,9 @@ export class ListaPedidosComponent implements OnInit {
       icon: 'checkbox-outline',
       handler: () => {
         console.log('Listos para entregar');
+        this.pedidosFiltrados = this.pedidos.filter(
+          (pedido) => pedido.estatus === "Listo"
+        );
       }
     },
     {
@@ -60,6 +71,9 @@ export class ListaPedidosComponent implements OnInit {
       icon: 'checkbox',
       handler: () => {
         console.log('Entregado');
+        this.pedidosFiltrados = this.pedidos.filter(
+          (pedido) => pedido.estatus === "Entregado"
+        );
       }
 
     },
@@ -71,10 +85,19 @@ export class ListaPedidosComponent implements OnInit {
 
   pedidosFiltrados: Pedido[]; // copia inicial
 
-  constructor(private actionSheetCtrl: ActionSheetController, public msgServ: MessageService, private storServ: StorageService) {
+  constructor(private router: Router, private actionSheetCtrl: ActionSheetController, public msgServ: MessageService, private storServ: StorageService) {
     this.pedidosFiltrados = [];
     this.isLoad = true;
     addIcons({ apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
+  }
+  ngAfterViewInit(): void {
+    const platform = Capacitor.getPlatform();
+    console.log(platform);
+    if (platform === 'ios') {
+      const search = document.getElementById("barSearch");
+      if (search)
+        search.style.marginTop = "1.25vh";
+    }
   }
 
   async openAcciones(pedido: Pedido) {
@@ -92,7 +115,6 @@ export class ListaPedidosComponent implements OnInit {
           text: 'WhatsApp',
           icon: 'logo-whatsapp',
           handler: () => {
-            const phone = pedido.tel_cli;
             const url = `https://wa.me/529361165168?text=Hola%20${pedido.name_cli},%20sobre%20tu%20pedido%20${pedido.bar_code}`;
             window.open(url, '_blank');
             //this.msgServ.showScreenAlert('¡Whatsapp!', 'Enviar mensaje a ' + pedido.tel_cli, ['Aceptar']);
@@ -138,12 +160,18 @@ export class ListaPedidosComponent implements OnInit {
         this.storServ.deleteFileWeb(pedido.bar_code + "_2");
     } else {
       let res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_1));
-      if(res === "error")
+      if (res === "error")
         this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
 
-      if (pedido.img_2 !== ''){
+      if (pedido.img_2 !== '') {
         res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_2));
-        if(res === "error")
+        if (res === "error")
+          this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
+      }
+
+      if (pedido.prob_audio !== '') {
+        res = await this.storServ.eliminarImagen(this.extractUri(pedido.prob_audio));
+        if (res === "error")
           this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
       }
     }
@@ -169,8 +197,8 @@ export class ListaPedidosComponent implements OnInit {
         console.log(data);
         this.pedidos = data; // Update the user list when the data changes
         this.pedidosFiltrados = [];
-        for (let i = this.pedidos.length-1; i >= 0; i--) {
-          const element:Pedido = this.pedidos[i];
+        for (let i = this.pedidos.length - 1; i >= 0; i--) {
+          const element: Pedido = this.pedidos[i];
           this.pedidosFiltrados.push(element);
         }
       });
@@ -178,6 +206,10 @@ export class ListaPedidosComponent implements OnInit {
     } catch (err) {
       throw new Error(`Error: ${err}`);
     }
+  }
+
+  irDetalle(bar_code: string) {
+    this.router.navigate(['/detalles', bar_code]);
   }
 
   handleRefresh(event: RefresherCustomEvent) {
