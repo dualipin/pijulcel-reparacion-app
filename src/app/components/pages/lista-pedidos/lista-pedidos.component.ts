@@ -2,13 +2,16 @@ import { MessageService } from 'src/app/services/message.service.service';
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
-import { camera, checkbox, checkboxOutline, print, constructOutline, ellipsisVertical, hourglassOutline, logoWhatsapp, trash, layers, apps, informationCircleOutline } from 'ionicons/icons';
+import { camera, checkbox, checkboxOutline, print, constructOutline, ellipsisVertical, hourglassOutline, logoWhatsapp, trash, layers, apps, informationCircleOutline, barcodeOutline } from 'ionicons/icons';
 import { Pedido } from 'src/app/models/pedido';
 import { Capacitor } from '@capacitor/core';
-import { ActionSheetController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
+import { ActionSheetController, AlertController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { StorageService } from 'src/app/services/storage.service';
 import { of, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
+import { PrinterService } from 'src/app/services/printer.service';
+import { Preferences } from '@capacitor/preferences';
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 
 @Component({
   selector: 'app-lista-pedidos',
@@ -85,10 +88,17 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
 
   pedidosFiltrados: Pedido[]; // copia inicial
 
-  constructor(private router: Router, private actionSheetCtrl: ActionSheetController, public msgServ: MessageService, private storServ: StorageService) {
+  constructor(
+    private router: Router,
+    private actionSheetCtrl: ActionSheetController,
+    public msgServ: MessageService,
+    private storServ: StorageService,
+    private printerService: PrinterService,
+    private alertCtrl: AlertController
+  ) {
     this.pedidosFiltrados = [];
     this.isLoad = true;
-    addIcons({ apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
+    addIcons({ barcodeOutline, apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
   }
   ngAfterViewInit(): void {
     const platform = Capacitor.getPlatform();
@@ -100,6 +110,34 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     }
   }
 
+  async startScan() {
+    const result = await BarcodeScanner.scan();
+    if (result.barcodes.length > 0) {
+
+      console.log('Código detectado:', result.barcodes[0].rawValue);
+
+      let encontrado = false;
+
+      this.pedidosFiltrados = this.pedidos.filter(
+        (pedido) => {
+          console.log('Filtrando pedido:', pedido);
+          pedido.bar_code === result.barcodes[0].rawValue ? (encontrado = true) : false;
+          return pedido.bar_code === result.barcodes[0].rawValue;
+        }
+      );
+
+      if (!encontrado) {
+        const alert = await this.alertCtrl.create({
+          header: 'No encontrado',
+          message: 'El código escaneado no coincide con ningún pedido.',
+          buttons: ['Aceptar']
+        });
+        await alert.present();
+        this.pedidosFiltrados = this.pedidos;
+      }
+    }
+  }
+
   async openAcciones(pedido: Pedido) {
     const actionSheet = await this.actionSheetCtrl.create({
       header: 'Acciones',
@@ -107,8 +145,43 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
         {
           text: 'Reimprimir código de barras',
           icon: 'print',
-          handler: () => {
-            this.msgServ.showScreenAlert('¡Reimprimiendo!', 'Reimprimiendo ticket del pedido ' + pedido.bar_code);
+          handler: async () => {
+            try {
+              const config = await Preferences.get({ key: 'printer_config' });
+              if (!config.value) return;
+
+              const { ip, port } = JSON.parse(config.value);
+
+              const zpl = `^XA
+^PW400
+^LH0,0
+^CI28
+
+^A0N,25,25
+^FO0,10
+^FB400,1,0,C,0
+^FD${pedido.name_cli}^FS
+
+^A0N,20,20
+^FO0,40
+^FB400,1,0,C,0
+^FD${pedido.tel_cli}^FS
+
+^LH50,0        // margen solo para el código
+^FO0,75
+^BY1.5
+^BCN,100,Y,N,N
+^FD${pedido.bar_code}^FS
+
+^XZ`;
+
+
+
+              await this.printerService.sendZPL(ip, port, zpl);
+              console.log('✅ Código de barras Reimpreso:', pedido.bar_code);
+            } catch (err) {
+              console.error('❌ Error al imprimir código de barras:', err);
+            }
           }
         },
         {

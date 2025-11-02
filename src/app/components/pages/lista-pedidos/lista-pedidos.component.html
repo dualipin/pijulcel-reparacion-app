@@ -37,9 +37,10 @@
       <ion-label (click)="irDetalle(pedido.bar_code)">
         <!-- Estado con badge -->
 
-        <h2 style="display: flex; align-items: center; font-weight: bold; gap: 8px;">{{ pedido.bar_code }} <ion-badge [color]="getEstadoColor(pedido.estatus)" slot="end">
-          {{ pedido.estatus }}
-        </ion-badge></h2>
+        <h2 style="display: flex; align-items: center; font-weight: bold; gap: 8px;">{{ pedido.bar_code }} <ion-badge
+            [color]="getEstadoColor(pedido.estatus)" slot="end">
+            {{ pedido.estatus }}
+          </ion-badge></h2>
         <p style="font-weight: bold;">{{ pedido.name_cli }}</p>
         <p>Tel: {{ pedido.tel_cli }}</p>
         <p>Fecha: {{ pedido.created | date:'short' }}</p>
@@ -67,4 +68,11 @@
   <!-- Alerta genérica -->
   <ion-alert [isOpen]="this.msgServ.isAlertOpenStatus()" [header]="this.msgServ.header" [message]="this.msgServ.message"
     [buttons]="this.msgServ.buttons" (didDismiss)="this.msgServ.setAlertStatus(false)"></ion-alert>
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button (click)="this.startScan()">
+      <ion-icon name="barcode-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
 </ion-content>

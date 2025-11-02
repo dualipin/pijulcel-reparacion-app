@@ -10,15 +10,17 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { StorageService } from 'src/app/services/storage.service';
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+import { PrinterService } from 'src/app/services/printer.service';
 
 @Component({
   selector: 'app-registrar-pedido',
   templateUrl: './registrar-pedido.component.html',
   styleUrls: ['./registrar-pedido.component.scss'],
-  imports: [IonicModule, CommonModule, ReactiveFormsModule, CommonModule],
+  imports: [IonicModule, CommonModule, ReactiveFormsModule],
   standalone: true,
 })
-export class RegistrarPedidoComponent implements OnInit {
+export class RegistrarPedidoComponent {
 
   public isLoad: Boolean;
 
@@ -32,7 +34,12 @@ export class RegistrarPedidoComponent implements OnInit {
   audioBase64!: string;
   audioURL!: string;
 
-  constructor(private fb: FormBuilder, public msgServ: MessageService, private storServ: StorageService) {
+  constructor(
+    private fb: FormBuilder,
+    public msgServ: MessageService,
+    private storServ: StorageService,
+    private printerService: PrinterService
+  ) {
     this.isLoad = true;
     this.pedidoForm = this.fb.group({
       bar_code: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(10)]],
@@ -165,6 +172,9 @@ export class RegistrarPedidoComponent implements OnInit {
 
       this.msgServ.showScreenAlert('¡Registrado!', 'Pedido registrado correctamente');
 
+      // 🔹 Imprimir automáticamente
+      await this.imprimirPedido(pedido.bar_code);
+
       // 5️⃣ Reset del formulario
       this.pedidoForm.reset();
       this.generarCodigo();
@@ -178,6 +188,31 @@ export class RegistrarPedidoComponent implements OnInit {
     }
   }
 
+  async imprimirPedido(bar_code: string) {
+    try {
+      const config = await Preferences.get({ key: 'printer_config' });
+      if (!config.value) return;
+
+      const { ip, port } = JSON.parse(config.value);
+
+      const zpl = `^XA
+^PW400
+^LH50,0
+^FO0,50
+^BY1.5
+^BCN,100,Y,N,N
+^FD${bar_code}
+^FS
+^XZ`;
+
+      await this.printerService.sendZPL(ip, Number(port), zpl);
+      console.log('✅ Código de barras impreso:', bar_code);
+    } catch (err) {
+      console.error('❌ Error al imprimir código de barras:', err);
+    }
+  }
+
+
 
   async convertUriToBase64(uri: string): Promise<string> {
     const response = await fetch(uri);
@@ -189,18 +224,14 @@ export class RegistrarPedidoComponent implements OnInit {
     });
   }
 
-
-  ngOnInit() {
-    setTimeout(() => {
-      this.isLoad = false;
-    }, 1500);
-  }
-
   handleRefresh(event: RefresherCustomEvent) {
-    setTimeout(() => {
-      window.location.reload();
-      event.target.complete();
-    }, 100);
+    this.pedidoForm.reset();
+    this.generarCodigo();
+    this.audioBlob = new Blob();
+    this.audioURL = '';
+    this.isRecording = false;
+    this.imagenesPreview = [];
+    event.target.complete();
   }
 
 }

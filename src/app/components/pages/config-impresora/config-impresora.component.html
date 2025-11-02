@@ -14,7 +14,52 @@
   <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  <div class="container">
-    Hola
-  </div>
+
+  <form [formGroup]="printerForm" (ngSubmit)="saveConfig()">
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="settings-outline"></ion-icon>
+          Datos de Conexión
+        </ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-input label="Dirección IP" label-placement="floating" fill="outline" formControlName="ip"
+          placeholder="192.168.0.120" type="text">
+        </ion-input>
+
+        <ion-input label="Puerto" label-placement="floating" fill="outline" formControlName="port" placeholder="9100"
+          type="number">
+        </ion-input>
+
+        <ion-button expand="block" color="primary" (click)="testConnection()" [disabled]="isLoading">
+          <ion-icon slot="start" name="wifi-outline"></ion-icon>
+          <ng-container *ngIf="isLoading">
+            <ion-spinner name="crescent" slot="start"></ion-spinner>
+            Probando conexión...
+          </ng-container>
+          <ng-container *ngIf="!isLoading">
+            Probar conexión
+          </ng-container>
+        </ion-button>
+
+        <div class="status" *ngIf="testStatus">
+          <ion-icon [color]="testStatus === 'OK' ? 'success' : 'danger'"
+            [name]="testStatus === 'OK' ? 'checkmark-circle' : 'close-circle'">
+          </ion-icon>
+          <ion-text [color]="testStatus === 'OK' ? 'success' : 'danger'">
+            {{ testMessage }}
+          </ion-text>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-button expand="block" color="primary" size="large" type="submit" [disabled]="printerForm.invalid" [disabled]="isLoading">
+      <ion-icon name="save-outline" slot="start"></ion-icon>
+      Guardar configuración
+    </ion-button>
+
+  </form>
 </ion-content>
