@@ -1,226 +1,80 @@
-import { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Injectable } from '@angular/core';
-import { SQLiteService } from './sqlite.service';
-import { DbnameVersionService } from './dbname-version.service';
-import { PedidoUpgradeStatements } from '../upgrades/pedido.upgrade.statements';
-import { Pedido } from '../models/pedido';
-import { BehaviorSubject, Observable } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
-import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
+import { Preferences } from '@capacitor/preferences';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StorageService {
-  public userList: BehaviorSubject<Pedido[]> =
-    new BehaviorSubject<Pedido[]>([]);
-  private databaseName: string = "";
-  private pedidoStatement: PedidoUpgradeStatements = new PedidoUpgradeStatements();
-  private versionUpgrades;
-  private loadToVersion;
-  private db!: SQLiteDBConnection;
-  private isPedidoReady: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
-  private isWeb: boolean;
+  // web, ios, android
+  private platform: string = Capacitor.getPlatform();
+  private token: string;
 
-  constructor(private sqliteService: SQLiteService,
-    private dbVerService: DbnameVersionService) {
-
-    this.versionUpgrades = this.pedidoStatement.pedidoUpgrades;
-    this.loadToVersion = this.versionUpgrades[this.versionUpgrades.length - 1].toVersion;
-
-    const platform = Capacitor.getPlatform();
-
-    if (platform === "web") this.isWeb = true;
-    else this.isWeb = false;
-
-  }
-  public getIsWeb(): boolean {
-    return this.isWeb;
-  }
-  async initializeDatabase(dbName: string) {
-    this.databaseName = dbName;
-    // create upgrade statements
-    await this.sqliteService
-      .addUpgradeStatement({
-        database: this.databaseName,
-        upgrade: this.versionUpgrades
-      });
-    // create and/or open the database
-    this.db = await this.sqliteService.openDatabase(this.databaseName,
-      false,
-      'no-encryption',
-      this.loadToVersion,
-      false
-    );
-    this.dbVerService.set(this.databaseName, this.loadToVersion);
-
-    await this.getUsers();
-  }
-  userState() {
-    return this.isPedidoReady.asObservable();
-  }
-  fetchUsers(): Observable<Pedido[]> {
-    return this.userList.asObservable();
+  constructor() {
+    this.token = "";
   }
 
-  private async loadUsers() {
-    const users: Pedido[] = (await this.db.query('SELECT * FROM pedidos;')).values as Pedido[];
-    this.userList.next(users);
+  public setToken(token: string) {
+    this.token = token;
   }
-  private async getUsers() {
-    await this.loadUsers();
-    this.isPedidoReady.next(true);
-  }
-  async getPedidoById(id: string): Promise<Pedido | null> {
-    try {
-      const result = await this.db.query(
-        'SELECT * FROM pedidos WHERE bar_code = ?;',
-        [id]
-      );
 
-      if (result.values && result.values.length > 0) {
-        return result.values[0] as Pedido;
-      } else {
-        return null; // No se encontró
-      }
-    } catch (error) {
-      console.error('❌ Error al obtener el pedido por ID:', error);
-      return null;
+  public getToken(): string {
+    return this.token;
+  }
+
+  /**
+   * Saves a key-value pair to storage based on the current platform.
+   *
+   * - On web platforms, uses `localStorage`.
+   * - On iOS and Android platforms, uses Capacitor's `Preferences` API.
+   *
+   * @param name - The key under which the item will be stored.
+   * @param item - The value to store.
+   * @returns A promise that resolves when the item has been saved (for native platforms), or immediately for web.
+   */
+  public async saveItemStorage(name: string, item: string) {
+    if (this.platform === "web")
+      localStorage.setItem(name, item);
+    else if (this.platform === "ios" || this.platform === "android") {
+      await Preferences.set({ key: name, value: item });
     }
   }
 
+  /**
+   * Retrieves a stored item by its name from the appropriate storage mechanism
+   * based on the current platform.
+   *
+   * - On web platforms, it fetches the item from `localStorage`.
+   * - On iOS and Android platforms, it fetches the item using Capacitor's `Preferences` API.
+   *
+   * @param name - The key/name of the item to retrieve from storage.
+   * @returns A promise that resolves to the stored string value, or an empty string if not found.
+   */
+  public async getItemStorage(name: string): Promise<string> {
 
-  async addUser(pedido: Pedido) {
-    const sql = `INSERT INTO pedidos
-  (bar_code,name_cli,tel_cli,device_name,prob_texto,
-  prob_audio,img_1,img_2,estatus,created,updated)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?);`;
-
-    if (this.isWeb) {
-      // WEB → usar localStorage
-      const img1Key = pedido.bar_code + "_1";
-      await this.saveWebLocalStore(img1Key, pedido.img_1);
-      pedido.img_1 = img1Key;
-
-      if (pedido.img_2) {
-        const img2Key = pedido.bar_code + "_2";
-        await this.saveWebLocalStore(img2Key, pedido.img_2);
-        pedido.img_2 = img2Key;
-      }
-
-      if (pedido.prob_audio) {
-        const audioKey = pedido.bar_code + "_audio";
-        await this.saveWebLocalStore(audioKey, `data:audio/webm;base64,${pedido.prob_audio}`);
-        pedido.prob_audio = audioKey;
-      }
-
-    } else {
-      // NATIVO → guardar en Filesystem
-      pedido.img_1 = await this.saveNativeImage(pedido.img_1);
-
-      if (pedido.img_2 !== '')
-        pedido.img_2 = await this.saveNativeImage(pedido.img_2);
-
-      if (pedido.prob_audio !== '')
-        pedido.prob_audio = await this.guardarAudio(pedido.prob_audio);
+    if (this.platform === "web") {
+      const token = localStorage.getItem(name);
+      if (token)
+        return token;
     }
-
-    await this.db.run(sql, [
-      pedido.bar_code,
-      pedido.name_cli,
-      pedido.tel_cli,
-      pedido.device_name,
-      pedido.prob_texto,
-      pedido.prob_audio,
-      pedido.img_1,
-      pedido.img_2,
-      pedido.estatus,
-      pedido.created,
-      pedido.updated
-    ]);
-
-    await this.getUsers();
-  }
-
-  private async saveNativeImage(imgPath: string): Promise<string> {
-
-    // Leer el archivo original como base64
-    const fileData = await Filesystem.readFile({
-      path: imgPath
-    });
-
-    const nombreArchivo = `foto_${Date.now()}.jpeg`;
-
-    // Guardar en Documents
-    const savedFile = await Filesystem.writeFile({
-      path: nombreArchivo,
-      data: fileData.data,
-      directory: Directory.Documents
-    });
-
-    return savedFile.uri; // guardas solo el nombre en BD
-  }
-
-
-  async getNativeImage(fileName: string): Promise<string> {
-    // 🔹 Devuelve una URI local (más eficiente que base64)
-    const uriResult = await Filesystem.getUri({
-      path: fileName,
-      directory: Directory.Data
-    });
-
-    return Capacitor.convertFileSrc(uriResult.uri);
-    // Esto convierte la ruta nativa en algo que <img> pueda mostrar
-  }
-
-  async updateStatusById(estatus: string, bar_code: string) {
-    const sql = `UPDATE pedidos SET estatus='${estatus}' WHERE bar_code='${bar_code}'`;
-    await this.db.run(sql);
-    await this.getUsers();
-  }
-  async deleteUserById(id: string) {
-    const sql = `DELETE FROM pedidos WHERE bar_code='${id}'`;
-    await this.db.run(sql);
-    await this.getUsers();
-  }
-
-  deleteFileWeb(id: string) {
-    localStorage.removeItem(id);
-    console.log("Eliminado: ", id);
-  }
-
-  async eliminarImagen(path: string) {
-    try {
-      await Filesystem.deleteFile({
-        path,
-        directory: Directory.Documents
-      });
-      return "Imagen eliminada: " + path;
-    } catch (error) {
-      return "error";
+    else if (this.platform === "ios" || this.platform === "android") {
+      const { value } = await Preferences.get({ key: name });
+      if (value)
+        return value;
     }
+    return "";
   }
 
-  async guardarAudio(base64Audio: string) {
-    const nombreArchivo = `audio_${Date.now()}.webm`;
+  removeItemStorage(name: string) {
 
-    try {
-      const resultado = await Filesystem.writeFile({
-        path: nombreArchivo,
-        data: base64Audio, // base64 sin codificación
-        directory: Directory.Documents
-      });
+    if (this.platform === "web")
+      localStorage.removeItem(name);
 
-      console.log('🎙️ Audio guardado en:', resultado.uri);
-      return resultado.uri;
-    } catch (error) {
-      console.error('❌ Error al guardar el audio:', error);
-      return "error";
-    }
+    else if (this.platform === "ios" || this.platform === "android")
+      Preferences.remove({ key: name });
+
   }
 
-  private async saveWebLocalStore(name: string, base64: string) {
-    localStorage.setItem(name, base64);
-  }
+
 }

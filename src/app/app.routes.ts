@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { NavegadorComponent } from './components/navegador/navegador.component';
 import { ConfigImpresoraComponent } from './components/pages/config-impresora/config-impresora.component';
+import { DetallesPedidoComponent } from './components/pages/detalles-pedido/detalles-pedido.component';
 import { ListaPedidosComponent } from './components/pages/lista-pedidos/lista-pedidos.component';
 import { RegistrarPedidoComponent } from './components/pages/registrar-pedido/registrar-pedido.component';
-import { DetallesPedidoComponent } from './components/pages/detalles-pedido/detalles-pedido.component';
+import { LoginComponent } from './components/login/login.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/tabs/list-pedidos', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
   { path: 'detalles/:id', component: DetallesPedidoComponent },
   {
     path: 'tabs',

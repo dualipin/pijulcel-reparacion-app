@@ -1,0 +1,43 @@
+<ion-content class="login-content ion-padding">
+
+  <!-- Imagen ilustración -->
+  <div class="login-header">
+    <img src="assets/icon/pijulcel.png" alt="Login Illustration" />
+  </div>
+
+  <!-- Formulario -->
+  <form (ngSubmit)="onLogin()" [formGroup]="loginForm" class="login-form">
+
+    <!-- User -->
+    <ion-input label="Correo electrónico/CURP" type="text" formControlName="user" label-placement="floating"
+      fill="outline" placeholder="example@gmail.com"
+      helperText="Ingresa un correo o CURP para iniciar sesión." errorText="* Campo obligatorio">
+    </ion-input>
+
+    <!-- Password -->
+    <ion-input labelPlacement="stacked" label="Password" placeholder="********"
+      [type]="isHiddenPassword ? 'password' : 'text'" fill="outline" formControlName="password">
+
+      <!-- Icono de candado -->
+      <ion-icon [name]="isHiddenPassword ? 'lock-closed' : 'lock-open'" slot="start"></ion-icon>
+
+      <!-- Botón mostrar/ocultar -->
+      <ion-button (click)="isHiddenPassword = !isHiddenPassword" fill="clear" slot="end" aria-label="Show/hide">
+        <ion-icon [name]="isHiddenPassword ? 'eye-off' : 'eye'" slot="icon-only"></ion-icon>
+      </ion-button>
+
+    </ion-input>
+
+    <ion-button expand="block" class="btn-primary" type="submit" [disabled]="this.loginForm.invalid || isCharging">
+      <!-- Normal -->
+      <ng-container *ngIf="!isCharging">
+        Iniciar sesión
+      </ng-container>
+      <!-- Estado cargando -->
+      <ng-container *ngIf="isCharging">
+        <ion-spinner color="primary" name="crescent"></ion-spinner>
+      </ng-container>
+    </ion-button>
+  </form>
+
+</ion-content>

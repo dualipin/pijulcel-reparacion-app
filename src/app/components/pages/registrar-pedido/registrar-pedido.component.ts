@@ -1,23 +1,23 @@
-import { Pedido } from './../../../models/pedido';
-import { MessageService } from './../../../services/message.service.service';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 import { addIcons } from 'ionicons';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { checkmarkCircleOutline, documentTextOutline, imageOutline, imagesOutline, micOutline, playOutline, stopCircleOutline, trash } from 'ionicons/icons';
-import { VoiceRecorder } from 'capacitor-voice-recorder';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
-import { StorageService } from 'src/app/services/storage.service';
-import { Capacitor } from '@capacitor/core';
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { camera, checkmarkCircleOutline, documentTextOutline, image, imageOutline, images, imagesOutline, micOutline, playOutline, stopCircleOutline, trash } from 'ionicons/icons';
+import { AlertController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { Preferences } from '@capacitor/preferences';
 import { PrinterService } from 'src/app/services/printer.service';
+import { CameraService } from 'src/app/services/camera.service';
+import { PedidoService } from 'src/app/services/pedido.service';
 
 @Component({
   selector: 'app-registrar-pedido',
   templateUrl: './registrar-pedido.component.html',
   styleUrls: ['./registrar-pedido.component.scss'],
-  imports: [IonicModule, CommonModule, ReactiveFormsModule],
+  imports: [
+    IonicModule, CommonModule,
+    ReactiveFormsModule, FormsModule
+  ],
   standalone: true,
 })
 export class RegistrarPedidoComponent {
@@ -36,9 +36,10 @@ export class RegistrarPedidoComponent {
 
   constructor(
     private fb: FormBuilder,
-    public msgServ: MessageService,
-    private storServ: StorageService,
-    private printerService: PrinterService
+    private alertCtrl: AlertController,
+    private printerService: PrinterService,
+    private cameraServ: CameraService,
+    private pedidoServ: PedidoService
   ) {
     this.isLoad = true;
     this.pedidoForm = this.fb.group({
@@ -50,48 +51,26 @@ export class RegistrarPedidoComponent {
     });
 
     this.generarCodigo();
-    addIcons({ documentTextOutline, imageOutline, imagesOutline, checkmarkCircleOutline, playOutline, stopCircleOutline, micOutline, trash });
+    addIcons({ documentTextOutline, trash, images, camera, imageOutline, imagesOutline, checkmarkCircleOutline, playOutline, stopCircleOutline, micOutline });
   }
 
 
   getImage(image: any) {
-
-    if (Capacitor.getPlatform() === 'web')
-      return image;
-
-    else
-      return Capacitor.convertFileSrc(image);
-
+    return this.cameraServ.getImage(image);
   }
 
 
   async tomarFoto(desdeGaleria: boolean) {
     if (this.imagenesPreview.length >= 2) {
-      this.msgServ.showScreenAlert('Límite alcanzado', 'Solo se permiten 2 imágenes por pedido');
+      this.alertCtrl.create({
+        header: 'Límite alcanzado',
+        message: 'Solo se permiten 2 imágenes por pedido.',
+        buttons: ['OK']
+      }).then(alert => alert.present());
       return;
     }
     try {
-      const image = await Camera.getPhoto({
-        quality: 50,
-        allowEditing: false,
-        resultType: Capacitor.getPlatform() === 'web' ? CameraResultType.DataUrl : CameraResultType.Uri,
-        source: desdeGaleria ? CameraSource.Photos : CameraSource.Camera
-      });
-
-      let imgToSave: string | Blob;
-
-      if (Capacitor.getPlatform() === 'web' && image.dataUrl) {
-        imgToSave = image.dataUrl; // base64 para web
-      } else if (image.path) {
-        // nativo
-        imgToSave = image.path;
-      } else {
-        this.msgServ.showScreenAlert('¡Algo paso!', 'Algo paso al obtener la foto');
-        return;
-      }
-
-      console.log(imgToSave);
-
+      let imgToSave = await this.cameraServ.takePhoto(desdeGaleria);
       this.imagenesPreview.push(imgToSave);
 
     } catch (error) {
@@ -134,7 +113,11 @@ export class RegistrarPedidoComponent {
       // Solicitar permiso
       const permission = await VoiceRecorder.requestAudioRecordingPermission();
       if (!permission.value) {
-        this.msgServ.showScreenAlert('Error', 'No se otorgó permiso para grabar audio');
+        this.alertCtrl.create({
+          header: 'No tienes permiso',
+          message: 'No se otorgó permiso para grabar audio',
+          buttons: ['OK']
+        }).then(alert => alert.present());
         return;
       }
 
@@ -143,39 +126,84 @@ export class RegistrarPedidoComponent {
       this.isRecording = true;
 
     } catch (err) {
-      this.msgServ.showScreenAlert('Error', 'No se pudo iniciar la grabación');
+      this.alertCtrl.create({
+        header: 'Error',
+        message: 'No se pudo iniciar la grabación',
+        buttons: ['OK']
+      }).then(alert => alert.present());
       console.error('Error al iniciar grabación', err);
     }
   }
 
   async submitPedido() {
 
-    // 3️⃣ Crear objeto del pedido
-    const pedido: Pedido = {
-      bar_code: this.pedidoForm.get('bar_code')?.value,
-      name_cli: this.pedidoForm.get('name_cli')?.value,
-      tel_cli: this.pedidoForm.get('tel_cli')?.value.toString(),
-      device_name: this.pedidoForm.get('device_name')?.value,
-      estatus: 'Pendiente',
-      img_1: this.imagenesPreview[0],
-      img_2: this.imagenesPreview[1] || '',
-      prob_texto: this.pedidoForm.get('prob_texto')?.value,
-      prob_audio: this.audioBase64 || '',
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
+    if (this.pedidoForm.invalid) {
+      this.alertCtrl.create({
+        header: 'Formulario incompleto',
+        message: 'Por favor llena todos los campos obligatorios.',
+        buttons: ['OK']
+      }).then(alert => alert.present());
+      return;
+    }
+
+    // 1️⃣ Crear objeto del pedido (JSON)
+    const pedido = {
+      cliente: {
+        nombre: this.pedidoForm.get('name_cli')?.value,
+        telefono: this.pedidoForm.get('tel_cli')?.value.toString()
+      },
+      dispositivo: {
+        nombre: this.pedidoForm.get('device_name')?.value
+      },
+      barCode: parseInt(this.pedidoForm.get('bar_code')?.value),
+      descrip: this.pedidoForm.get('prob_texto')?.value
     };
 
     console.log('Pedido a enviar:', pedido);
 
+    // 2️⃣ Construir FormData
+    const formData = new FormData();
+
+    // Agregar JSON como BLOB
+    formData.append(
+      "pedido",
+      new Blob([JSON.stringify(pedido)], { type: "application/json" })
+    );
+
+    // 3️⃣ Procesar imágenes
+    for (let i = 0; i < this.imagenesPreview.length; i++) {
+      const imgPath = this.imagenesPreview[i];
+
+      const blobImg = await this.cameraServ.convertBlob(imgPath);
+
+      formData.append(
+        "imagenes",
+        blobImg,
+        `imagen_${i}.jpg`
+      );
+    }
+
+    // 4️⃣ Agregar audio (si existe)
+    if (this.audioBlob) {
+      formData.append("audio", this.audioBlob, "audio.webm");
+    }
+
     try {
-      this.storServ.addUser(pedido);
+      // 5️⃣ Enviar al backend
+      const resp = await this.pedidoServ.register(formData).toPromise();
+      console.log("Respuesta Backend:", resp);
 
-      this.msgServ.showScreenAlert('¡Registrado!', 'Pedido registrado correctamente');
+      // 6️⃣ Mostrar alerta de éxito
+      this.alertCtrl.create({
+        header: 'Pedido registrado',
+        message: 'El pedido ha sido registrado exitosamente.',
+        buttons: ['OK']
+      }).then(alert => alert.present());
 
-      // 🔹 Imprimir automáticamente
-      await this.imprimirPedido(pedido.bar_code);
+      // 7️⃣ Imprimir
+      await this.imprimirPedido(pedido.cliente.nombre, pedido.cliente.telefono, pedido.barCode.toString());
 
-      // 5️⃣ Reset del formulario
+      // 8️⃣ Reset del formulario
       this.pedidoForm.reset();
       this.generarCodigo();
       this.audioBlob = new Blob();
@@ -183,12 +211,19 @@ export class RegistrarPedidoComponent {
       this.isRecording = false;
       this.imagenesPreview = [];
 
-    } catch (error: any) {
-      console.log(error);
+    } catch (error) {
+      console.error("ERROR al enviar:", error);
+
+      this.alertCtrl.create({
+        header: 'Error',
+        message: 'No se pudo registrar el pedido.',
+        buttons: ['OK']
+      }).then(alert => alert.present());
     }
   }
 
-  async imprimirPedido(bar_code: string) {
+
+  async imprimirPedido(name_cli: string, tel_cli: string, bar_code: string) {
     try {
       const config = await Preferences.get({ key: 'printer_config' });
       if (!config.value) return;
@@ -197,12 +232,25 @@ export class RegistrarPedidoComponent {
 
       const zpl = `^XA
 ^PW400
-^LH50,0
-^FO0,50
+^LH0,0
+^CI28
+
+^A0N,25,25
+^FO0,10
+^FB400,1,0,C,0
+^FD${name_cli}^FS
+
+^A0N,20,20
+^FO0,40
+^FB400,1,0,C,0
+^FD${tel_cli}^FS
+
+^LH50,0        // margen solo para el código
+^FO0,75
 ^BY1.5
 ^BCN,100,Y,N,N
-^FD${bar_code}
-^FS
+^FD${bar_code}^FS
+
 ^XZ`;
 
       await this.printerService.sendZPL(ip, Number(port), zpl);
@@ -210,18 +258,6 @@ export class RegistrarPedidoComponent {
     } catch (err) {
       console.error('❌ Error al imprimir código de barras:', err);
     }
-  }
-
-
-
-  async convertUriToBase64(uri: string): Promise<string> {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject; reader.readAsDataURL(blob);
-    });
   }
 
   handleRefresh(event: RefresherCustomEvent) {

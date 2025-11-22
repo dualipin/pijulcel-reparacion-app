@@ -1,34 +1,52 @@
-import { StorageService } from 'src/app/services/storage.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
-import { Pedido } from 'src/app/models/pedido';
-import { Capacitor } from '@capacitor/core';
+import { IonicModule } from '@ionic/angular';
+import { CameraService } from 'src/app/services/camera.service';
+import { IPedido } from 'src/app/models/Interfaces/IPedido';
+import { environment } from 'src/environments/environment';
+import { PedidoService } from 'src/app/services/pedido.service';
+import { lastValueFrom } from 'rxjs';
+import { add, alertCircleOutline, barcodeOutline, callOutline, construct, flagOutline, hardwareChipOutline, imagesOutline, logoWhatsapp, personCircleOutline, refreshOutline, timeOutline } from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-detalles-pedido',
   templateUrl: './detalles-pedido.component.html',
   styleUrls: ['./detalles-pedido.component.scss'],
-  imports: [IonicModule, CommonModule],
+  imports: [IonicModule, CommonModule, ReactiveFormsModule, FormsModule],
   standalone: true
 })
 export class DetallesPedidoComponent implements OnInit {
 
-  pedido: Pedido;
+  pedido: IPedido;
+
+  imgUrl: string = environment.urlImg;
 
   estatus: string[] = ["Pendiente", "En proceso", "Listo", "Entregado"]
 
-  constructor(private route: ActivatedRoute, private storeServ: StorageService) {
+  constructor(
+    private route: ActivatedRoute,
+    private cameraServ: CameraService,
+    private pedidoServ: PedidoService
+  ) {
+    addIcons({ alertCircleOutline, personCircleOutline, callOutline, barcodeOutline, construct, logoWhatsapp, imagesOutline, hardwareChipOutline, flagOutline, timeOutline, refreshOutline });
     this.pedido = {
-      bar_code: "",
-      name_cli: "",
-      tel_cli: "",
-      device_name: "",
-      prob_texto: "",
-      prob_audio: "",
-      img_1: "",
-      img_2: "",
+      barCode: "",
+      cliente: {
+        id: -1,
+        nombre: "",
+        telefono: ""
+      },
+      dispositivo: {
+        id: -1,
+        nombre: ""
+      },
+      descrip: "",
+      audio: "",
+      img1: "",
+      img2: "",
       estatus: "",
       created: "",
       updated: ""
@@ -39,35 +57,38 @@ export class DetallesPedidoComponent implements OnInit {
     let idPedido = this.route.snapshot.paramMap.get('id')!;
     console.log('ID recibido:', idPedido);
 
-    let res = await this.storeServ.getPedidoById(idPedido);
-    console.log(res);
-    if (res)
-      this.pedido = res;
-
-    this.pedido.updated = new Date(this.pedido.updated);
-    this.pedido.created = new Date(this.pedido.created);
+    lastValueFrom(this.pedidoServ.getById(idPedido))
+      .then((res: any) => {
+        this.pedido = res.data;
+        console.log('Pedido obtenido:', this.pedido);
+      })
+      .catch(err => {
+        console.error('Error al obtener el pedido:', err);
+      });
   }
 
   chageStatus(estatus: string, bar_code: string) {
-    this.storeServ.updateStatusById(estatus, bar_code);
+    lastValueFrom(this.pedidoServ.updateStatus(bar_code, estatus))
+      .then((res: any) => {
+        console.log('Estatus actualizado:', res);
+        this.pedido.estatus = estatus;
+      })
+      .catch(err => {
+        console.error('Error al actualizar el estatus:', err);
+      });
   }
 
   getImage(img: string): string {
-    let isWeb = this.storeServ.getIsWeb();
-    if (isWeb) {
-      let data = localStorage.getItem(img);
-      if (data) {
-        return data;
-      }
-      else return "";
-    } else {
-      return Capacitor.convertFileSrc(img);
-    }
+    return this.cameraServ.getImage(img);
   }
 
   sendMessage() {
-    const url = `https://wa.me/52${this.pedido.tel_cli}`;
+    const url = `https://wa.me/52${this.pedido.cliente.telefono}`;
     window.open(url, '_blank');
+  }
+
+  back() {
+    window.history.back();
   }
 
 }

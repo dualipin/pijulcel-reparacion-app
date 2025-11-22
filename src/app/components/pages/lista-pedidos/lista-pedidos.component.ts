@@ -1,17 +1,19 @@
-import { MessageService } from 'src/app/services/message.service.service';
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
 import { camera, checkbox, checkboxOutline, print, constructOutline, ellipsisVertical, hourglassOutline, logoWhatsapp, trash, layers, apps, informationCircleOutline, barcodeOutline } from 'ionicons/icons';
-import { Pedido } from 'src/app/models/pedido';
 import { Capacitor } from '@capacitor/core';
 import { ActionSheetController, AlertController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
-import { StorageService } from 'src/app/services/storage.service';
-import { of, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { PrinterService } from 'src/app/services/printer.service';
 import { Preferences } from '@capacitor/preferences';
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
+import { CameraService } from 'src/app/services/camera.service';
+import { PedidoService } from 'src/app/services/pedido.service';
+import { lastValueFrom } from 'rxjs';
+import { IPedido } from 'src/app/models/Interfaces/IPedido';
+import { environment } from 'src/environments/environment';
+import { ExceptionService } from 'src/app/services/exception.service';
 
 @Component({
   selector: 'app-lista-pedidos',
@@ -20,11 +22,13 @@ import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
   imports: [IonicModule, CommonModule],
   standalone: true,
 })
-export class ListaPedidosComponent implements OnInit, AfterViewInit {
+export class ListaPedidosComponent implements AfterViewInit {
 
   public isLoad: Boolean;
 
-  pedidos: Pedido[] = [];
+  imgUrl: string = environment.urlImg;
+
+  pedidos: IPedido[] = [];
 
   getFileSrc(path: string): string {
     return Capacitor.convertFileSrc(path);
@@ -86,20 +90,37 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     },
   ];
 
-  pedidosFiltrados: Pedido[]; // copia inicial
+  pedidosFiltrados: IPedido[]; // copia inicial
 
   constructor(
     private router: Router,
     private actionSheetCtrl: ActionSheetController,
-    public msgServ: MessageService,
-    private storServ: StorageService,
     private printerService: PrinterService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private cameraServ: CameraService,
+    private pedidoServ: PedidoService,
+    private exServ: ExceptionService
   ) {
     this.pedidosFiltrados = [];
     this.isLoad = true;
     addIcons({ barcodeOutline, apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
   }
+
+  ionViewWillEnter() {
+    lastValueFrom(this.pedidoServ.getAll())
+      .then(res => {
+        console.log('Pedidos obtenidos:', res);
+        this.pedidos = res.data;
+        this.pedidosFiltrados = [...this.pedidos];
+        this.isLoad = false;
+      })
+      .catch(err => {
+        console.error('Error al obtener los pedidos:', err);
+        this.isLoad = false;
+        this.exServ.handleError(err);
+      });
+  }
+
   ngAfterViewInit(): void {
     const platform = Capacitor.getPlatform();
     console.log(platform);
@@ -121,8 +142,8 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       this.pedidosFiltrados = this.pedidos.filter(
         (pedido) => {
           console.log('Filtrando pedido:', pedido);
-          pedido.bar_code === result.barcodes[0].rawValue ? (encontrado = true) : false;
-          return pedido.bar_code === result.barcodes[0].rawValue;
+          pedido.barCode === result.barcodes[0].rawValue ? (encontrado = true) : false;
+          return pedido.barCode === result.barcodes[0].rawValue;
         }
       );
 
@@ -138,7 +159,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     }
   }
 
-  async openAcciones(pedido: Pedido) {
+  async openAcciones(pedido: IPedido) {
     const actionSheet = await this.actionSheetCtrl.create({
       header: 'Acciones',
       buttons: [
@@ -160,25 +181,25 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
 ^A0N,25,25
 ^FO0,10
 ^FB400,1,0,C,0
-^FD${pedido.name_cli}^FS
+^FD${pedido.cliente.nombre}^FS
 
 ^A0N,20,20
 ^FO0,40
 ^FB400,1,0,C,0
-^FD${pedido.tel_cli}^FS
+^FD${pedido.cliente.telefono}^FS
 
 ^LH50,0        // margen solo para el código
 ^FO0,75
 ^BY1.5
 ^BCN,100,Y,N,N
-^FD${pedido.bar_code}^FS
+^FD${pedido.barCode}^FS
 
 ^XZ`;
 
 
 
               await this.printerService.sendZPL(ip, port, zpl);
-              console.log('✅ Código de barras Reimpreso:', pedido.bar_code);
+              console.log('✅ Código de barras Reimpreso:', pedido.barCode);
             } catch (err) {
               console.error('❌ Error al imprimir código de barras:', err);
             }
@@ -188,7 +209,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
           text: 'WhatsApp',
           icon: 'logo-whatsapp',
           handler: () => {
-            const url = `https://wa.me/529361165168?text=Hola%20${pedido.name_cli},%20sobre%20tu%20pedido%20${pedido.bar_code}`;
+            const url = `https://wa.me/529361165168?text=Hola%20${pedido.cliente.nombre},%20sobre%20tu%20pedido%20${pedido.barCode}`;
             window.open(url, '_blank');
             //this.msgServ.showScreenAlert('¡Whatsapp!', 'Enviar mensaje a ' + pedido.tel_cli, ['Aceptar']);
           }
@@ -212,74 +233,38 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
   }
 
   getImage(img: string): string {
-    let isWeb = this.storServ.getIsWeb();
-    if (isWeb) {
-      let data = localStorage.getItem(img);
-      if (data) {
-        return data;
-      }
-      else return "";
-    } else {
-      return Capacitor.convertFileSrc(img);
-    }
+    return this.cameraServ.getImage(img);
   }
 
-  async eliminarPedido(pedido: Pedido) {
-    this.storServ.deleteUserById(pedido.bar_code);
+  async eliminarPedido(pedido: IPedido) {
+    const alert = await this.alertCtrl.create({
+      header: 'Confirmar eliminación',
+      message: `¿Estás seguro de que deseas eliminar el pedido con código ${pedido.barCode}? Esta acción no se puede deshacer.`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              console.log(`Pedido con código ${pedido.barCode} eliminado.`);
+            } catch (error) {
+              console.error('Error al eliminar el pedido:', error);
+            }
+          }
+        }
+      ]
+    });
 
-    if (this.storServ.getIsWeb()) {
-      this.storServ.deleteFileWeb(pedido.bar_code + "_1");
-      if (pedido.img_2)
-        this.storServ.deleteFileWeb(pedido.bar_code + "_2");
-    } else {
-      let res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_1));
-      if (res === "error")
-        this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
-
-      if (pedido.img_2 !== '') {
-        res = await this.storServ.eliminarImagen(this.extractUri(pedido.img_2));
-        if (res === "error")
-          this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
-      }
-
-      if (pedido.prob_audio !== '') {
-        res = await this.storServ.eliminarImagen(this.extractUri(pedido.prob_audio));
-        if (res === "error")
-          this.msgServ.showScreenAlert('¡Error!', 'Hubo un error al eliminar la imagen');
-      }
-    }
-    this.msgServ.showScreenAlert('¡Eliminado!', 'Pedido eliminado correctamente');
+    await alert.present();
   }
 
   extractUri(uri: string): string {
     const partes = uri.split('/');
     return partes[partes.length - 1];
-  }
-
-  ngOnInit() {
-    try {
-      this.storServ.userState().pipe(
-        switchMap(res => {
-          if (res) {
-            return this.storServ.fetchUsers();
-          } else {
-            return of([]); // Return an empty array when res is false
-          }
-        })
-      ).subscribe(data => {
-        console.log(data);
-        this.pedidos = data; // Update the user list when the data changes
-        this.pedidosFiltrados = [];
-        for (let i = this.pedidos.length - 1; i >= 0; i--) {
-          const element: Pedido = this.pedidos[i];
-          this.pedidosFiltrados.push(element);
-        }
-        this.pedidos = this.pedidosFiltrados;
-      });
-
-    } catch (err) {
-      throw new Error(`Error: ${err}`);
-    }
   }
 
   getEstadoColor(estado: string): string {
@@ -317,9 +302,9 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     }
 
     this.pedidosFiltrados = this.pedidos.filter(p =>
-      p.bar_code.toLowerCase().includes(val) ||
-      p.name_cli.toLowerCase().includes(val) ||
-      p.tel_cli.toLowerCase().includes(val)
+      p.barCode.toLowerCase().includes(val) ||
+      p.cliente.nombre.toLowerCase().includes(val) ||
+      (p.cliente.telefono || '').toLowerCase().includes(val)
     );
   }
 

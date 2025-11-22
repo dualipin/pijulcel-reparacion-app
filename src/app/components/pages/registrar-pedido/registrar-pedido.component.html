@@ -118,11 +118,9 @@
 
     <!-- Botón enviar -->
     <ion-button expand="block" color="secondary" size="large" type="submit"
-      [disabled]="pedidoForm.invalid || this.imagenesPreview.length <= 0 || (this.pedidoForm.value.prob_texto.trim() === '' && !this.audioBlob)">
+      [disabled]="pedidoForm.invalid || this.imagenesPreview.length <= 0 || (this.pedidoForm.value.prob_texto === '' && !this.audioBlob)">
       Registrar Pedido
     </ion-button>
 
   </form>
-  <ion-alert [isOpen]="this.msgServ.isAlertOpenStatus()" [header]="this.msgServ.header" [message]="this.msgServ.message"
-    [buttons]="this.msgServ.buttons" (didDismiss)="this.msgServ.setAlertStatus(false)"></ion-alert>
 </ion-content>

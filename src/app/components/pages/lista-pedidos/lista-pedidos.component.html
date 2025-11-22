@@ -29,20 +29,20 @@
   <ion-list *ngIf="pedidosFiltrados.length > 0; else sinPedidos">
     <ion-item *ngFor="let pedido of pedidosFiltrados">
       <!-- Imagen desde FileSystem -->
-      <ion-thumbnail slot="start" *ngIf="pedido.img_1" style="height: 100%;">
-        <img [src]="getImage(pedido.img_1)" alt="Pedido" class="pedido-img" />
+      <ion-thumbnail slot="start" *ngIf="pedido.img1" style="height: 100%;">
+        <img [src]="imgUrl + pedido.img1" alt="Pedido" class="pedido-img" />
       </ion-thumbnail>
 
       <!-- Datos del pedido -->
-      <ion-label (click)="irDetalle(pedido.bar_code)">
+      <ion-label (click)="irDetalle(pedido.barCode)">
         <!-- Estado con badge -->
 
-        <h2 style="display: flex; align-items: center; font-weight: bold; gap: 8px;">{{ pedido.bar_code }} <ion-badge
+        <h2 style="display: flex; align-items: center; font-weight: bold; gap: 8px;">{{ pedido.barCode }} <ion-badge
             [color]="getEstadoColor(pedido.estatus)" slot="end">
             {{ pedido.estatus }}
           </ion-badge></h2>
-        <p style="font-weight: bold;">{{ pedido.name_cli }}</p>
-        <p>Tel: {{ pedido.tel_cli }}</p>
+        <p style="font-weight: bold;">{{ pedido.cliente.nombre }}</p>
+        <p>Tel: {{ pedido.cliente.telefono }}</p>
         <p>Fecha: {{ pedido.created | date:'short' }}</p>
       </ion-label>
 
@@ -66,9 +66,6 @@
     </div>
   </ng-template>
   <!-- Alerta genérica -->
-  <ion-alert [isOpen]="this.msgServ.isAlertOpenStatus()" [header]="this.msgServ.header" [message]="this.msgServ.message"
-    [buttons]="this.msgServ.buttons" (didDismiss)="this.msgServ.setAlertStatus(false)"></ion-alert>
-
   <ion-fab slot="fixed" vertical="bottom" horizontal="end">
     <ion-fab-button (click)="this.startScan()">
       <ion-icon name="barcode-outline"></ion-icon>

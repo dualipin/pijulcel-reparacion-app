@@ -1,7 +1,7 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/list-pedidos"></ion-back-button>
+      <ion-back-button (click)="back()"></ion-back-button>
     </ion-buttons>
     <ion-title>
       <div class="title-center">
@@ -19,10 +19,10 @@
       <ion-card-header>
         <ion-card-title>
           <ion-icon name="person-circle-outline"></ion-icon>
-          {{ pedido.name_cli }}
+          {{ pedido.cliente.nombre }}
         </ion-card-title>
         <ion-card-subtitle>
-          <ion-icon name="call-outline"></ion-icon> {{ pedido.tel_cli }}
+          <ion-icon name="call-outline"></ion-icon> {{ pedido.cliente.telefono }}
         </ion-card-subtitle>
       </ion-card-header>
     </ion-card>
@@ -32,20 +32,20 @@
       <ion-item>
         <ion-icon name="barcode-outline" slot="start" color="medium"></ion-icon>
         <ion-label>Código de barras</ion-label>
-        <ion-note slot="end">{{ pedido.bar_code }}</ion-note>
+        <ion-note slot="end">{{ pedido.barCode }}</ion-note>
       </ion-item>
 
       <ion-item>
         <ion-icon name="hardware-chip-outline" slot="start" color="medium"></ion-icon>
         <ion-label>Dispositivo</ion-label>
-        <ion-note slot="end">{{ pedido.device_name }}</ion-note>
+        <ion-note slot="end">{{ pedido.dispositivo.nombre }}</ion-note>
       </ion-item>
 
       <ion-item>
         <ion-icon name="flag-outline" slot="start" color="medium"></ion-icon>
         <ion-label>Estatus</ion-label>
         <ion-select slot="end" aria-label="Estado del pedido" [value]="pedido.estatus"
-          (ionChange)="chageStatus($event.detail.value, pedido.bar_code)">
+          (ionChange)="chageStatus($event.detail.value, pedido.barCode)">
           <ion-select-option *ngFor="let estado of estatus" [value]="estado">
             {{ estado }}
           </ion-select-option>
@@ -74,12 +74,12 @@
         </ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <ng-container *ngIf="pedido.prob_audio !== ''">
-          <audio [src]="getImage(pedido.prob_audio)" controls></audio>
+        <ng-container *ngIf="pedido.audio !== ''">
+          <audio [src]="imgUrl + pedido.audio" controls></audio>
         </ng-container>
         <br/>
-        <ng-container *ngIf="pedido.prob_texto !== ''">
-          <ion-text color="dark">{{ pedido.prob_texto }}</ion-text>
+        <ng-container *ngIf="pedido.descrip !== ''">
+          <ion-text color="dark">{{ pedido.descrip }}</ion-text>
         </ng-container>
       </ion-card-content>
     </ion-card>
@@ -95,10 +95,10 @@
         <ion-grid>
           <ion-row>
             <ion-col size="6">
-              <ion-img [src]="getImage(pedido.img_1)" class="pedido-img"></ion-img>
+              <ion-img [src]="imgUrl + (pedido.img1 || '')" class="pedido-img"></ion-img>
             </ion-col>
-            <ion-col size="6" *ngIf="pedido.img_2">
-              <ion-img [src]="getImage(pedido.img_2)" class="pedido-img"></ion-img>
+            <ion-col size="6" *ngIf="pedido.img2">
+              <ion-img [src]="imgUrl + (pedido.img2 || '')" class="pedido-img"></ion-img>
             </ion-col>
           </ion-row>
         </ion-grid>

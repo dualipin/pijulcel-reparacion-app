@@ -2,9 +2,14 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+const ipServer = "http://localhost:8081";
 export const environment = {
-  production: false
+  production: false,
+  apiUrl: ipServer + "/api",
+  urlImg: ipServer + "/api/storage/",
+  version: "1.0.0"
 };
+
 
 /*
  * For easier debugging in development mode, you can import the following file
