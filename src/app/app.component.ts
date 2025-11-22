@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { AuthService } from './services/auth.service';
 import { StorageService } from './services/storage.service';
+import { Camera } from '@capacitor/camera';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +16,11 @@ export class AppComponent implements OnInit {
     private storageServ: StorageService
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+
+    await Camera.requestPermissions();
+    await VoiceRecorder.requestAudioRecordingPermission();
+
     this.storageServ.getItemStorage('token')
       .then(token => {
         if (token) this.authServ.setToken(token);

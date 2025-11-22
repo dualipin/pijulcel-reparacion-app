@@ -95,10 +95,10 @@
         <ion-grid>
           <ion-row>
             <ion-col size="6">
-              <ion-img [src]="imgUrl + (pedido.img1 || '')" class="pedido-img"></ion-img>
+              <ion-img [src]="imgUrl + pedido.img1" class="pedido-img"></ion-img>
             </ion-col>
             <ion-col size="6" *ngIf="pedido.img2">
-              <ion-img [src]="imgUrl + (pedido.img2 || '')" class="pedido-img"></ion-img>
+              <ion-img [src]="imgUrl + pedido.img2" class="pedido-img"></ion-img>
             </ion-col>
           </ion-row>
         </ion-grid>

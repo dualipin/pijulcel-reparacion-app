@@ -1,7 +1,6 @@
 import { IonicModule, AlertController } from '@ionic/angular';
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
-import { Capacitor } from '@capacitor/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/services/auth.service';
 import { Router } from '@angular/router';
@@ -9,15 +8,17 @@ import { StorageService } from 'src/app/services/storage.service';
 import { addIcons } from 'ionicons';
 import { eye, eyeOff, lockClosed, lockOpen, arrowBackOutline } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
+import { IonContent, IonInput, IonButton, IonSpinner } from "@ionic/angular/standalone";
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   imports: [
-    IonicModule, CommonModule, FormsModule, ReactiveFormsModule
-  ],
-  standalone: true
+    CommonModule, IonicModule, IonInput, IonContent,
+    IonButton, ReactiveFormsModule, FormsModule,
+    IonSpinner
+  ]
 })
 export class LoginComponent {
 

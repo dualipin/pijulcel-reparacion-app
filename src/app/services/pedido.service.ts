@@ -16,18 +16,22 @@ export class PedidoService {
   }
 
   public register(body: any): Observable<any> {
+    console.log("Token:", this.authServ.getToken());
     return this.http.post(`${this.urlApi}`, body, { headers: this.authServ.getHeader() });
   }
 
   public getAll(): Observable<any> {
+    console.log("Token:", this.authServ.getToken());
     return this.http.get(`${this.urlApi}`, { headers: this.authServ.getHeader() });
   }
 
   public getById(id: string): Observable<any> {
+    console.log("Token:", this.authServ.getToken());
     return this.http.get(`${this.urlApi}/${id}`, { headers: this.authServ.getHeader() });
   }
 
   public updateStatus(id: string, status: string): Observable<any> {
+    console.log("Token:", this.authServ.getToken());
     return this.http.put(`${this.urlApi}/update-estatus/${id}/${status}`, {}, { headers: this.authServ.getHeader() });
   }
 

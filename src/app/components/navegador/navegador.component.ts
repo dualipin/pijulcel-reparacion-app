@@ -6,13 +6,22 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule} from '@angular/forms';
+import {
+  IonIcon,
+  IonTabBar,
+  IonTabButton,
+  IonTabs
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-navegador',
   templateUrl: './navegador.component.html',
   styleUrls: ['./navegador.component.scss'],
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, IonicModule, FormsModule],
-  standalone: true,
+  imports: [
+    CommonModule, ReactiveFormsModule, RouterModule,
+    IonicModule, FormsModule, IonTabBar, IonTabButton, IonTabs, IonIcon
+  ],
+  standalone: true
 })
 export class NavegadorComponent {
 

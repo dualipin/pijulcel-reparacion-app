@@ -7,15 +7,26 @@ import { IPedido } from 'src/app/models/Interfaces/IPedido';
 import { environment } from 'src/environments/environment';
 import { PedidoService } from 'src/app/services/pedido.service';
 import { lastValueFrom } from 'rxjs';
-import { add, alertCircleOutline, barcodeOutline, callOutline, construct, flagOutline, hardwareChipOutline, imagesOutline, logoWhatsapp, personCircleOutline, refreshOutline, timeOutline } from 'ionicons/icons';
+import { alertCircleOutline, barcodeOutline, callOutline, construct, flagOutline, hardwareChipOutline, imagesOutline, logoWhatsapp, personCircleOutline, refreshOutline, timeOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  IonIcon, IonItem, IonLabel, IonNote, IonSelect, IonSelectOption,
+  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonText, IonImg,
+  IonGrid, IonRow, IonCol, IonFab, IonFabButton, IonButtons, IonBackButton
+
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-detalles-pedido',
   templateUrl: './detalles-pedido.component.html',
   styleUrls: ['./detalles-pedido.component.scss'],
-  imports: [IonicModule, CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [
+    IonicModule, CommonModule, ReactiveFormsModule, FormsModule,
+    IonIcon, IonItem, IonLabel, IonNote, IonSelect, IonSelectOption,
+    IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonText, IonImg,
+     IonGrid, IonRow, IonCol, IonFab, IonFabButton, IonButtons, IonBackButton
+  ],
   standalone: true
 })
 export class DetallesPedidoComponent implements OnInit {

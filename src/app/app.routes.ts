@@ -18,8 +18,7 @@ export const routes: Routes = [
         path: 'list-pedidos', component: ListaPedidosComponent
       },
       { path: 'nuevo-pedido', component: RegistrarPedidoComponent },
-      { path: 'config-impresora', component: ConfigImpresoraComponent },
-      { path: '', redirectTo: 'list-pedidos', pathMatch: 'full' } // Default tab
+      { path: 'config-impresora', component: ConfigImpresoraComponent }
     ]
   },
 ];

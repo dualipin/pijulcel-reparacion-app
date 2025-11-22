@@ -6,14 +6,21 @@ import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Preferences } from '@capacitor/preferences';
 import { PrinterService } from 'src/app/services/printer.service';
+import {
+  IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonText, IonInput,
+  IonRefresher, IonRefresherContent, IonToolbar, IonHeader,
+  IonTitle, IonProgressBar, IonButton, IonSpinner
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-config-impresora',
   templateUrl: './config-impresora.component.html',
   styleUrls: ['./config-impresora.component.scss'],
   imports: [
-    IonicModule, CommonModule, ReactiveFormsModule,
-    FormsModule
+    IonicModule, CommonModule, ReactiveFormsModule, IonSpinner,
+    FormsModule, IonIcon, IonCard, IonCardHeader, IonToolbar,
+    IonCardTitle, IonCardContent, IonText, IonRefresher, IonRefresherContent,
+    IonHeader, IonTitle, IonProgressBar, IonInput, IonButton
   ],
   standalone: true,
 })

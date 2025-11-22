@@ -3,12 +3,18 @@ import { addIcons } from 'ionicons';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { camera, checkmarkCircleOutline, documentTextOutline, image, imageOutline, images, imagesOutline, micOutline, playOutline, stopCircleOutline, trash } from 'ionicons/icons';
+import { camera, checkmarkCircleOutline, documentTextOutline, imageOutline, images, imagesOutline, micOutline, playOutline, stopCircleOutline, trash } from 'ionicons/icons';
 import { AlertController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { Preferences } from '@capacitor/preferences';
 import { PrinterService } from 'src/app/services/printer.service';
 import { CameraService } from 'src/app/services/camera.service';
 import { PedidoService } from 'src/app/services/pedido.service';
+
+import {
+  IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea,
+  IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent
+
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-registrar-pedido',
@@ -16,9 +22,10 @@ import { PedidoService } from 'src/app/services/pedido.service';
   styleUrls: ['./registrar-pedido.component.scss'],
   imports: [
     IonicModule, CommonModule,
-    ReactiveFormsModule, FormsModule
-  ],
-  standalone: true,
+    ReactiveFormsModule, FormsModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
+    IonInput, IonTextarea, IonButton, IonIcon,
+    IonRefresher, IonRefresherContent
+  ]
 })
 export class RegistrarPedidoComponent {
 

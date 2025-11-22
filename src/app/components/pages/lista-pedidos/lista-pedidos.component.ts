@@ -14,15 +14,27 @@ import { lastValueFrom } from 'rxjs';
 import { IPedido } from 'src/app/models/Interfaces/IPedido';
 import { environment } from 'src/environments/environment';
 import { ExceptionService } from 'src/app/services/exception.service';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  IonButtons, IonButton, IonFab, IonFabButton,
+  IonSearchbar, IonContent, IonList, IonItem, IonLabel,
+  IonBadge, IonRefresher, IonRefresherContent
+
+ } from '@ionic/angular/standalone';
+import { IonHeader, IonTitle, IonToolbar, IonThumbnail } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-lista-pedidos',
   templateUrl: './lista-pedidos.component.html',
   styleUrls: ['./lista-pedidos.component.scss'],
-  imports: [IonicModule, CommonModule],
-  standalone: true,
+  imports: [
+    IonicModule, CommonModule, FormsModule, ReactiveFormsModule, IonHeader,
+    IonToolbar, IonTitle, IonButtons, IonButton, IonSearchbar,
+    IonContent, IonList, IonItem, IonLabel, IonBadge, IonRefresher,
+    IonRefresherContent, IonThumbnail, IonFab, IonFabButton
+  ]
 })
-export class ListaPedidosComponent implements AfterViewInit {
+export class ListaPedidosComponent implements OnInit, AfterViewInit {
 
   public isLoad: Boolean;
 
@@ -106,8 +118,8 @@ export class ListaPedidosComponent implements AfterViewInit {
     addIcons({ barcodeOutline, apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
   }
 
-  ionViewWillEnter() {
-    lastValueFrom(this.pedidoServ.getAll())
+  async ngOnInit() {
+    await lastValueFrom(this.pedidoServ.getAll())
       .then(res => {
         console.log('Pedidos obtenidos:', res);
         this.pedidos = res.data;
@@ -287,24 +299,22 @@ export class ListaPedidosComponent implements AfterViewInit {
     this.router.navigate(['/detalles', bar_code]);
   }
 
-  handleRefresh(event: RefresherCustomEvent) {
-    setTimeout(() => {
-      window.location.reload();
+  async handleRefresh(event: RefresherCustomEvent) {
+      await this.ngOnInit();
       event.target.complete();
-    }, 100);
   }
 
   filtrarPedidos(event: any) {
-    const val = event.target.value.toLowerCase();
+    const val = (event.target.value || '')+"".toLowerCase();
     if (!val) {
       this.pedidosFiltrados = [...this.pedidos];
       return;
     }
 
     this.pedidosFiltrados = this.pedidos.filter(p =>
-      p.barCode.toLowerCase().includes(val) ||
-      p.cliente.nombre.toLowerCase().includes(val) ||
-      (p.cliente.telefono || '').toLowerCase().includes(val)
+      (p.barCode+"").toLowerCase().includes(val) ||
+      (p.cliente.nombre+"").toLowerCase().includes(val) ||
+      (p.cliente.telefono+"" || '').toLowerCase().includes(val)
     );
   }
 

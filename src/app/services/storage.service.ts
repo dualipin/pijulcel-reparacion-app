@@ -34,11 +34,14 @@ export class StorageService {
    * @returns A promise that resolves when the item has been saved (for native platforms), or immediately for web.
    */
   public async saveItemStorage(name: string, item: string) {
+
     if (this.platform === "web")
       localStorage.setItem(name, item);
-    else if (this.platform === "ios" || this.platform === "android") {
+    else if (this.platform === "ios" || this.platform === "android")
       await Preferences.set({ key: name, value: item });
-    }
+
+    console.log(`Item saved: ${name} = ${item} on platform ${this.platform}`);
+
   }
 
   /**
