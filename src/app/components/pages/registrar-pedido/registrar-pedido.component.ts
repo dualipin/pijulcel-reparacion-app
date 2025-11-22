@@ -200,6 +200,8 @@ export class RegistrarPedidoComponent {
       const resp = await this.pedidoServ.register(formData).toPromise();
       console.log("Respuesta Backend:", resp);
 
+      this.pedidoServ.pedidos.push(resp.data);
+
       // 6️⃣ Mostrar alerta de éxito
       this.alertCtrl.create({
         header: 'Pedido registrado',

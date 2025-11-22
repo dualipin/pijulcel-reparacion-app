@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,9 +10,16 @@ import { environment } from 'src/environments/environment';
 export class AuthService {
 
   private urlApi: string = environment.apiUrl + '/auth';
-  private token: string = '';
+  public token: string | null = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private storage: StorageService) {
+    this.init();
+  }
+
+  async init() {
+    this.token = await this.storage.getItemStorage('token');
+    console.log('Token en Service:', this.token);
+  }
 
   public login(body: any): Observable<any> {
     return this.http.post(`${this.urlApi}/login`, body);
@@ -19,13 +27,6 @@ export class AuthService {
 
   public testAPI(): Observable<any> {
     return this.http.get(this.urlApi + '/test');
-  }
-
-  public setToken(token: string): void {
-    this.token = token;
-  }
-  public getToken(): string {
-    return this.token;
   }
 
   public getHeader(): HttpHeaders {

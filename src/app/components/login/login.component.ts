@@ -57,7 +57,7 @@ export class LoginComponent {
         console.log(res);
         this.isCharging = false;
         this.router.navigateByUrl('/tabs/list-pedidos');
-        this.authServ.setToken(res.data.token);
+        this.authServ.token = res.data.token;
         await this.storageServ.saveItemStorage("token", res.data.token);
       })
       .catch(async (err) => {

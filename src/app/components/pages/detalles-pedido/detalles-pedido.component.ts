@@ -83,6 +83,13 @@ export class DetallesPedidoComponent implements OnInit {
       .then((res: any) => {
         console.log('Estatus actualizado:', res);
         this.pedido.estatus = estatus;
+        this.pedidoServ.pedidos.map(p => {
+          if (p.barCode === this.pedido.barCode) {
+            p.estatus = estatus;
+          }
+          return p;
+        });
+
       })
       .catch(err => {
         console.error('Error al actualizar el estatus:', err);

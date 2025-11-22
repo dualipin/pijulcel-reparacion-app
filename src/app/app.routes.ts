@@ -5,14 +5,15 @@ import { DetallesPedidoComponent } from './components/pages/detalles-pedido/deta
 import { ListaPedidosComponent } from './components/pages/lista-pedidos/lista-pedidos.component';
 import { RegistrarPedidoComponent } from './components/pages/registrar-pedido/registrar-pedido.component';
 import { LoginComponent } from './components/login/login.component';
+import { sesionGuard } from './guards/sesion.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'detalles/:id', component: DetallesPedidoComponent },
+  { path: 'detalles/:id', component: DetallesPedidoComponent, canActivate: [sesionGuard] },
   {
     path: 'tabs',
-    component: NavegadorComponent,
+    component: NavegadorComponent, canActivate: [sesionGuard],
     children: [
       {
         path: 'list-pedidos', component: ListaPedidosComponent

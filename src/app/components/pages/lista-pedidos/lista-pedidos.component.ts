@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, NgZone, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
 import { camera, checkbox, checkboxOutline, print, constructOutline, ellipsisVertical, hourglassOutline, logoWhatsapp, trash, layers, apps, informationCircleOutline, barcodeOutline } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
@@ -18,10 +18,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   IonButtons, IonButton, IonFab, IonFabButton,
   IonSearchbar, IonContent, IonList, IonItem, IonLabel,
-  IonBadge, IonRefresher, IonRefresherContent
+  IonBadge, IonRefresher, IonRefresherContent, IonHeader, IonTitle, IonToolbar, IonThumbnail
 
- } from '@ionic/angular/standalone';
-import { IonHeader, IonTitle, IonToolbar, IonThumbnail } from '@ionic/angular/standalone';
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-lista-pedidos',
@@ -36,11 +35,11 @@ import { IonHeader, IonTitle, IonToolbar, IonThumbnail } from '@ionic/angular/st
 })
 export class ListaPedidosComponent implements OnInit, AfterViewInit {
 
-  public isLoad: Boolean;
+  public isLoad: Boolean = true;
 
   imgUrl: string = environment.urlImg;
 
-  pedidos: IPedido[] = [];
+
 
   getFileSrc(path: string): string {
     return Capacitor.convertFileSrc(path);
@@ -52,7 +51,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'layers',
       handler: () => {
         console.log('Todos');
-        this.pedidosFiltrados = this.pedidos;
+        this.pedidosFiltrados = this.pedidoServ.pedidos;
       }
     },
     {
@@ -60,7 +59,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'hourglass-outline',
       handler: () => {
         console.log('Pendientes');
-        this.pedidosFiltrados = this.pedidos.filter(
+        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Pendiente"
         );
       }
@@ -70,7 +69,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'construct-outline',
       handler: () => {
         console.log('En proceso');
-        this.pedidosFiltrados = this.pedidos.filter(
+        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "En proceso"
         );
       }
@@ -80,7 +79,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'checkbox-outline',
       handler: () => {
         console.log('Listos para entregar');
-        this.pedidosFiltrados = this.pedidos.filter(
+        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Listo"
         );
       }
@@ -90,7 +89,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'checkbox',
       handler: () => {
         console.log('Entregado');
-        this.pedidosFiltrados = this.pedidos.filter(
+        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Entregado"
         );
       }
@@ -102,7 +101,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     },
   ];
 
-  pedidosFiltrados: IPedido[]; // copia inicial
+  pedidosFiltrados: IPedido[] = []; // copia inicial
 
   constructor(
     private router: Router,
@@ -111,25 +110,26 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     private alertCtrl: AlertController,
     private cameraServ: CameraService,
     private pedidoServ: PedidoService,
-    private exServ: ExceptionService
+    private exServ: ExceptionService,
+    private zone: NgZone
   ) {
-    this.pedidosFiltrados = [];
-    this.isLoad = true;
     addIcons({ barcodeOutline, apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
   }
 
   async ngOnInit() {
+    this.isLoad = true;
     await lastValueFrom(this.pedidoServ.getAll())
       .then(res => {
         console.log('Pedidos obtenidos:', res);
-        this.pedidos = res.data;
-        this.pedidosFiltrados = [...this.pedidos];
-        this.isLoad = false;
+        this.pedidoServ.pedidos = res.data;
+        this.pedidosFiltrados = [...this.pedidoServ.pedidos];
       })
       .catch(err => {
         console.error('Error al obtener los pedidos:', err);
         this.isLoad = false;
         this.exServ.handleError(err);
+      }).finally(() => {
+        this.isLoad = false;
       });
   }
 
@@ -151,7 +151,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
 
       let encontrado = false;
 
-      this.pedidosFiltrados = this.pedidos.filter(
+      this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
         (pedido) => {
           console.log('Filtrando pedido:', pedido);
           pedido.barCode === result.barcodes[0].rawValue ? (encontrado = true) : false;
@@ -166,9 +166,13 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
           buttons: ['Aceptar']
         });
         await alert.present();
-        this.pedidosFiltrados = this.pedidos;
+        this.pedidosFiltrados = this.pedidoServ.pedidos;
       }
     }
+  }
+
+  ionViewWillEnter() {
+    this.pedidosFiltrados = [...this.pedidoServ.pedidos];
   }
 
   async openAcciones(pedido: IPedido) {
@@ -248,8 +252,8 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     return this.cameraServ.getImage(img);
   }
 
-  async eliminarPedido(pedido: IPedido) {
-    const alert = await this.alertCtrl.create({
+  eliminarPedido(pedido: IPedido) {
+    this.alertCtrl.create({
       header: 'Confirmar eliminación',
       message: `¿Estás seguro de que deseas eliminar el pedido con código ${pedido.barCode}? Esta acción no se puede deshacer.`,
       buttons: [
@@ -260,23 +264,26 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
         {
           text: 'Eliminar',
           role: 'destructive',
-          handler: async () => {
-            try {
-              console.log(`Pedido con código ${pedido.barCode} eliminado.`);
-            } catch (error) {
-              console.error('Error al eliminar el pedido:', error);
-            }
+          handler: () => {
+            console.log(`Pedido con código ${pedido.barCode} eliminado.`);
+            lastValueFrom(this.pedidoServ.delete(pedido.barCode))
+              .then(res => {
+                this.zone.run(() => {
+                  this.pedidoServ.pedidos = this.pedidoServ.pedidos.filter(
+                    p => parseInt(p.barCode) !== parseInt(pedido.barCode)
+                  );
+                  this.pedidosFiltrados = [...this.pedidoServ.pedidos];
+                  console.log('Después de eliminar:', this.pedidosFiltrados);
+                });
+              })
+              .catch(err => {
+                console.error('Error al eliminar el pedido:', err);
+                this.exServ.handleError(err);
+              });
           }
         }
       ]
-    });
-
-    await alert.present();
-  }
-
-  extractUri(uri: string): string {
-    const partes = uri.split('/');
-    return partes[partes.length - 1];
+    }).then(alert => alert.present());
   }
 
   getEstadoColor(estado: string): string {
@@ -300,21 +307,21 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
   }
 
   async handleRefresh(event: RefresherCustomEvent) {
-      await this.ngOnInit();
-      event.target.complete();
+    await this.ngOnInit();
+    event.target.complete();
   }
 
   filtrarPedidos(event: any) {
-    const val = (event.target.value || '')+"".toLowerCase();
+    const val = (event.target.value || '') + "".toLowerCase();
     if (!val) {
-      this.pedidosFiltrados = [...this.pedidos];
+      this.pedidosFiltrados = [...this.pedidoServ.pedidos];
       return;
     }
 
-    this.pedidosFiltrados = this.pedidos.filter(p =>
-      (p.barCode+"").toLowerCase().includes(val) ||
-      (p.cliente.nombre+"").toLowerCase().includes(val) ||
-      (p.cliente.telefono+"" || '').toLowerCase().includes(val)
+    this.pedidosFiltrados = this.pedidoServ.pedidos.filter(p =>
+      (p.barCode + "").toLowerCase().includes(val) ||
+      (p.cliente.nombre + "").toLowerCase().includes(val) ||
+      (p.cliente.telefono + "" || '').toLowerCase().includes(val)
     );
   }
 
