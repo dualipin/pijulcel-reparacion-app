@@ -11,7 +11,7 @@ import { CameraService } from 'src/app/services/camera.service';
 import { PedidoService } from 'src/app/services/pedido.service';
 
 import {
-  IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea,
+  IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea, IonSpinner,
   IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent
 
 } from '@ionic/angular/standalone';
@@ -23,7 +23,7 @@ import {
   imports: [
     IonicModule, CommonModule,
     ReactiveFormsModule, FormsModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-    IonInput, IonTextarea, IonButton, IonIcon,
+    IonInput, IonTextarea, IonButton, IonIcon, IonSpinner,
     IonRefresher, IonRefresherContent
   ]
 })
@@ -142,7 +142,10 @@ export class RegistrarPedidoComponent {
     }
   }
 
+  public isSending: boolean = false;
+
   async submitPedido() {
+    this.isSending = true;
 
     if (this.pedidoForm.invalid) {
       this.alertCtrl.create({
@@ -228,6 +231,8 @@ export class RegistrarPedidoComponent {
         message: 'No se pudo registrar el pedido.',
         buttons: ['OK']
       }).then(alert => alert.present());
+    } finally {
+      this.isSending = false;
     }
   }
 

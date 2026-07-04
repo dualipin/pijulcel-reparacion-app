@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'pijulcel-app-ionic',
+  appId: 'app.pijulcel.com',
+  appName: 'Pijulcel',
   webDir: 'www',
   server: {
     cleartext: true,   // <--- importante

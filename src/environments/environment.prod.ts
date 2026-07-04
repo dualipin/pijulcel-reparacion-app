@@ -1,4 +1,4 @@
-const ipServer = "http://192.168.1.200:8081";
+const ipServer = "http://192.168.1.198:8081";
 export const environment = {
   production: true,
   apiUrl: ipServer + "/api",

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">pijulcel-app-ionic</string>
-    <string name="title_activity_main">pijulcel-app-ionic</string>
-    <string name="package_name">io.ionic.starter</string>
-    <string name="custom_url_scheme">io.ionic.starter</string>
+    <string name="app_name">Pijulcel</string>
+    <string name="title_activity_main">Pijulcel</string>
+    <string name="package_name">app.pijulcel.com</string>
+    <string name="custom_url_scheme">app.pijulcel.com</string>
 </resources>

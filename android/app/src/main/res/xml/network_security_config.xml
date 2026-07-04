@@ -2,6 +2,6 @@
 <network-security-config>
     <!-- Permitir tráfico en claro (HTTP) -->
     <domain-config cleartextTrafficPermitted="true">
-      <domain includeSubdomains="true">192.168.1.200</domain> <!-- tu servidor -->
+      <domain includeSubdomains="true">192.168.1.198</domain> <!-- tu servidor -->
     </domain-config>
 </network-security-config>

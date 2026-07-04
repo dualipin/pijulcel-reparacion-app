@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package app.pijulcel.com;
 
 import com.getcapacitor.BridgeActivity;
 

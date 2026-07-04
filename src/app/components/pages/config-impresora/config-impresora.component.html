@@ -30,11 +30,15 @@
           placeholder="192.168.0.120" type="text">
         </ion-input>
 
+        <ion-input label="Base de red" label-placement="floating" fill="outline" formControlName="scanBaseIp"
+          placeholder="192.168.0" type="text">
+        </ion-input>
+
         <ion-input label="Puerto" label-placement="floating" fill="outline" formControlName="port" placeholder="9100"
           type="number">
         </ion-input>
 
-        <ion-button expand="block" color="primary" (click)="testConnection()" [disabled]="isLoading">
+        <ion-button expand="block" color="primary" type="button" (click)="testConnection()" [disabled]="isLoading">
           <ion-icon slot="start" name="wifi-outline"></ion-icon>
           <ng-container *ngIf="isLoading">
             <ion-spinner name="crescent" slot="start"></ion-spinner>
@@ -44,6 +48,30 @@
             Probar conexión
           </ng-container>
         </ion-button>
+
+        <ion-button expand="block" color="tertiary" type="button" (click)="searchPrinters()" [disabled]="isScanning">
+          <ion-icon slot="start" name="search-outline"></ion-icon>
+          <ng-container *ngIf="isScanning">
+            <ion-spinner name="crescent" slot="start"></ion-spinner>
+            Buscando impresoras...
+          </ng-container>
+          <ng-container *ngIf="!isScanning">
+            Buscar impresoras
+          </ng-container>
+        </ion-button>
+
+        <ion-text color="medium" class="scan-message">
+          {{ scanMessage }}
+        </ion-text>
+
+        <ion-list *ngIf="foundPrinters.length > 0" class="printer-list">
+          <ion-item button detail="true" *ngFor="let printerIp of foundPrinters" (click)="selectPrinter(printerIp)">
+            <ion-label>
+              <h2>{{ printerIp }}</h2>
+              <p>Seleccionar y guardar esta IP</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
 
         <div class="status" *ngIf="testStatus">
           <ion-icon [color]="testStatus === 'OK' ? 'success' : 'danger'"
@@ -56,7 +84,7 @@
       </ion-card-content>
     </ion-card>
 
-    <ion-button expand="block" color="primary" size="large" type="submit" [disabled]="printerForm.invalid" [disabled]="isLoading">
+    <ion-button expand="block" color="primary" size="large" type="submit" [disabled]="printerForm.invalid || isLoading">
       <ion-icon name="save-outline" slot="start"></ion-icon>
       Guardar configuración
     </ion-button>

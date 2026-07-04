@@ -2,7 +2,8 @@
 // `ng build` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
-const ipServer = "http:///192.168.1.200:8081";
+// const ipServer = "http:///192.168.1.198:8081";
+const ipServer = "http:///localhost:8081";
 export const environment = {
   production: false,
   apiUrl: ipServer + "/api",

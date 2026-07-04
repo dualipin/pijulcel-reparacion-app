@@ -1,5 +1,5 @@
 {
-  "name": "pijulcel-app-ionic",
+  "name": "pijulcel",
   "version": "0.0.1",
   "author": "Samuel Burelos Jeronimo",
   "homepage": "https://ionicframework.com/",
@@ -26,6 +26,7 @@
     "@capacitor/core": "7.4.3",
     "@capacitor/haptics": "7.0.2",
     "@capacitor/keyboard": "7.0.3",
+    "@capacitor/network": "^7.0.4",
     "@capacitor/preferences": "^7.0.2",
     "@capacitor/status-bar": "^7.0.3",
     "@ionic/angular": "^8.0.0",
@@ -52,6 +53,7 @@
     "@angular/cli": "^20.0.0",
     "@angular/compiler-cli": "^20.0.0",
     "@angular/language-service": "^20.0.0",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "7.4.3",
     "@ionic/angular-toolkit": "^12.0.0",
     "@types/jasmine": "~5.1.0",
