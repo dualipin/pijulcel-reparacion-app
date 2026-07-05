@@ -15,7 +15,6 @@ import {
 import { Preferences } from '@capacitor/preferences';
 import { debounceTime } from 'rxjs/operators';
 import { PrinterService } from 'src/app/services/printer.service';
-import { NetworkInterface } from '@awesome-cordova-plugins/network-interface/ngx';
 import {
   IonIcon,
   IonCard,
@@ -62,7 +61,6 @@ import {
     IonInput,
     IonButton,
   ],
-  providers: [NetworkInterface],
   standalone: true,
 })
 export class ConfigImpresoraComponent implements OnInit {
@@ -80,8 +78,7 @@ export class ConfigImpresoraComponent implements OnInit {
 
   constructor(
     private printer: PrinterService,
-    private fb: FormBuilder,
-    private networkInterface: NetworkInterface
+    private fb: FormBuilder
   ) {
     this.isLoad = true;
     addIcons({ searchOutline, settings });
@@ -123,15 +120,30 @@ export class ConfigImpresoraComponent implements OnInit {
   }
 
   private async tryAutoDetectScanBaseIp() {
-    if (Capacitor.getPlatform() === 'web') {
+    if (!Capacitor.isNativePlatform()) {
       return;
     }
 
     try {
-      const info = await this.networkInterface.getWiFiIPAddress();
-      if (info?.ip) {
-        this.setBaseIpFromConfiguredIp(info.ip);
+      const networkInterface = (window as any)?.networkinterface;
+      if (!networkInterface?.getWiFiIPAddress) {
+        return;
       }
+
+      await new Promise<void>((resolve) => {
+        networkInterface.getWiFiIPAddress(
+          (info: { ip?: string }) => {
+            if (info?.ip) {
+              this.setBaseIpFromConfiguredIp(info.ip);
+            }
+            resolve();
+          },
+          (error: unknown) => {
+            console.log('No se pudo obtener la IP local del dispositivo:', error);
+            resolve();
+          }
+        );
+      });
     } catch (error) {
       console.log('No se pudo obtener la IP local del dispositivo:', error);
     }
