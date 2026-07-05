@@ -2,16 +2,39 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
 import { searchOutline, settings } from 'ionicons/icons';
+import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Preferences } from '@capacitor/preferences';
 import { debounceTime } from 'rxjs/operators';
 import { PrinterService } from 'src/app/services/printer.service';
+import { NetworkInterface } from '@awesome-cordova-plugins/network-interface/ngx';
 import {
-  IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonText, IonInput,
-  IonRefresher, IonRefresherContent, IonToolbar, IonHeader,
-  IonTitle, IonProgressBar, IonButton, IonSpinner, IonList, IonItem, IonLabel
+  IonIcon,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonText,
+  IonInput,
+  IonRefresher,
+  IonRefresherContent,
+  IonToolbar,
+  IonHeader,
+  IonTitle,
+  IonProgressBar,
+  IonButton,
+  IonSpinner,
+  IonList,
+  IonItem,
+  IonLabel,
 } from '@ionic/angular/standalone';
 
 @Component({
@@ -19,15 +42,30 @@ import {
   templateUrl: './config-impresora.component.html',
   styleUrls: ['./config-impresora.component.scss'],
   imports: [
-    IonicModule, CommonModule, ReactiveFormsModule, IonSpinner,
-    FormsModule, IonIcon, IonCard, IonCardHeader, IonToolbar,
-    IonCardTitle, IonCardContent, IonText, IonRefresher, IonRefresherContent,
-    IonHeader, IonTitle, IonProgressBar, IonInput, IonButton
+    IonicModule,
+    CommonModule,
+    ReactiveFormsModule,
+    IonSpinner,
+    FormsModule,
+    IonIcon,
+    IonCard,
+    IonCardHeader,
+    IonToolbar,
+    IonCardTitle,
+    IonCardContent,
+    IonText,
+    IonRefresher,
+    IonRefresherContent,
+    IonHeader,
+    IonTitle,
+    IonProgressBar,
+    IonInput,
+    IonButton,
   ],
+  providers: [NetworkInterface],
   standalone: true,
 })
 export class ConfigImpresoraComponent implements OnInit {
-
   public isLoad: Boolean;
 
   public isLoading = false;
@@ -36,20 +74,23 @@ export class ConfigImpresoraComponent implements OnInit {
   printerForm!: FormGroup;
   testStatus: 'OK' | 'ERROR' | null = null;
   testMessage = '';
-  scanMessage = 'Busca impresoras en la red local y selecciona una para guardarla.';
+  scanMessage =
+    'Busca impresoras en la red local y selecciona una para guardarla.';
   foundPrinters: string[] = [];
-
 
   constructor(
     private printer: PrinterService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private networkInterface: NetworkInterface
   ) {
     this.isLoad = true;
     addIcons({ searchOutline, settings });
   }
 
   private getScanBaseIp(): string {
-    const rawIp = String(this.printerForm?.value?.scanBaseIp ?? this.printerForm?.value?.ip ?? '').trim();
+    const rawIp = String(
+      this.printerForm?.value?.scanBaseIp || this.printerForm?.value?.ip || ''
+    ).trim();
 
     if (!rawIp) {
       return '';
@@ -63,7 +104,7 @@ export class ConfigImpresoraComponent implements OnInit {
 
     return rawIp;
   }
-
+  
   private setBaseIpFromConfiguredIp(ip?: string) {
     if (!ip) {
       return;
@@ -72,12 +113,29 @@ export class ConfigImpresoraComponent implements OnInit {
     const parts = ip.trim().replace(/\.$/, '').split('.').filter(Boolean);
 
     if (parts.length >= 3) {
-      this.printerForm.patchValue({
-        scanBaseIp: parts.slice(0, 3).join('.'),
-      }, { emitEvent: false });
+      this.printerForm.patchValue(
+        {
+          scanBaseIp: parts.slice(0, 3).join('.'),
+        },
+        { emitEvent: false }
+      );
     }
   }
 
+  private async tryAutoDetectScanBaseIp() {
+    if (Capacitor.getPlatform() === 'web') {
+      return;
+    }
+
+    try {
+      const info = await this.networkInterface.getWiFiIPAddress();
+      if (info?.ip) {
+        this.setBaseIpFromConfiguredIp(info.ip);
+      }
+    } catch (error) {
+      console.log('No se pudo obtener la IP local del dispositivo:', error);
+    }
+  }
 
   async testConnection() {
     this.isLoading = true;
@@ -116,7 +174,8 @@ export class ConfigImpresoraComponent implements OnInit {
     }
 
     if (!baseIp) {
-      this.scanMessage = 'Ingresa una base de red válida, por ejemplo 192.168.1';
+      this.scanMessage =
+        'Ingresa una base de red válida, por ejemplo 192.168.1';
       return;
     }
 
@@ -170,13 +229,16 @@ export class ConfigImpresoraComponent implements OnInit {
       const data = JSON.parse(saved.value);
       this.printerForm.patchValue(data);
       this.setBaseIpFromConfiguredIp(data.ip);
+    } else {
+      await this.tryAutoDetectScanBaseIp();
     }
     // Rellenar automáticamente el segmento de red cuando cambia el campo IP
-    this.printerForm.get('ip')?.valueChanges.pipe(
-      debounceTime(250),
-    ).subscribe((val: string) => {
-      this.setBaseIpFromConfiguredIp(val);
-    });
+    this.printerForm
+      .get('ip')
+      ?.valueChanges.pipe(debounceTime(250))
+      .subscribe((val: string) => {
+        this.setBaseIpFromConfiguredIp(val);
+      });
     this.isLoad = false;
   }
 
@@ -186,5 +248,4 @@ export class ConfigImpresoraComponent implements OnInit {
       event.target.complete();
     }, 100);
   }
-
 }
