@@ -12,7 +12,7 @@
       Pedidos
     </ion-tab-button>
 
-    <ion-tab-button tab="config-impresora" [routerLink]="['/tabs/config-impresora']">
+    <ion-tab-button *ngIf="!isDesktop" tab="config-impresora" [routerLink]="['/tabs/config-impresora']">
       <ion-icon name="settings"></ion-icon>
       Impresora
     </ion-tab-button>
