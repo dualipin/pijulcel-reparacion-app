@@ -1,4 +1,4 @@
-const ipServer = "http://192.168.1.198:8081";
+const ipServer = "https://server.pijulcel.keysoft.com.mx";
 export const environment = {
   production: true,
   apiUrl: ipServer + "/api",
