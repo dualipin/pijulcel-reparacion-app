@@ -6,6 +6,7 @@ import { Network } from '@capacitor/network';
 import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Preferences } from '@capacitor/preferences';
+import { debounceTime } from 'rxjs/operators';
 import { PrinterService } from 'src/app/services/printer.service';
 import {
   IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonText, IonInput,
@@ -170,6 +171,12 @@ export class ConfigImpresoraComponent implements OnInit {
       this.printerForm.patchValue(data);
       this.setBaseIpFromConfiguredIp(data.ip);
     }
+    // Rellenar automáticamente el segmento de red cuando cambia el campo IP
+    this.printerForm.get('ip')?.valueChanges.pipe(
+      debounceTime(250),
+    ).subscribe((val: string) => {
+      this.setBaseIpFromConfiguredIp(val);
+    });
     this.isLoad = false;
   }
 

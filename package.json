@@ -6,8 +6,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng build && npx cap sync && ng serve",
-    "ionic:android": "ionic capacitor build android"
-  },
+"ionic:android": "ng build && npx cap sync && npx cap open android"  },
   "private": true,
   "dependencies": {
     "@angular/animations": "^20.0.0",
