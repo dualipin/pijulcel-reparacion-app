@@ -195,7 +195,11 @@ export class RegistrarPedidoComponent {
 
       let blob: Blob;
       if (Capacitor.getPlatform() === 'web') {
-         blob = await fetch(currentPath).then(r => r.blob());
+         if (videoFile.blob) {
+            blob = videoFile.blob;
+         } else {
+            blob = await fetch(currentPath).then(r => r.blob());
+         }
       } else {
          try {
            const readFile = await Filesystem.readFile({ path: currentPath });

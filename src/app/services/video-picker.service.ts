@@ -19,7 +19,8 @@ export class VideoPickerService {
           size: file.size,
           mimeType: file.mimeType,
           width: file.width || 1920,
-          height: file.height || 1080
+          height: file.height || 1080,
+          blob: file.blob
         };
       }
       return null;

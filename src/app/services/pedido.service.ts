@@ -18,7 +18,32 @@ export class PedidoService {
     }
 
   public register(body: any): Observable<any> {
-    return this.http.post(`${this.urlApi}`, body, { headers: this.authServ.getHeader() });
+    // Usamos fetch nativo en lugar de HttpClient para evitar el bug de XHR
+    // en Android WebView que hace que la carga de Blobs grandes se congele.
+    return new Observable(observer => {
+      const token = this.authServ.token;
+      fetch(this.urlApi, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: body
+      })
+      .then(async response => {
+        if (!response.ok) {
+          const text = await response.text();
+          throw { status: response.status, message: text || response.statusText };
+        }
+        return response.json();
+      })
+      .then(data => {
+        observer.next(data);
+        observer.complete();
+      })
+      .catch(err => {
+        observer.error(err);
+      });
+    });
   }
 
   public getAll(): Observable<any> {
