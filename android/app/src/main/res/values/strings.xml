@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Pijulcel</string>
     <string name="title_activity_main">Pijulcel</string>
-    <string name="package_name">app.pijulcel.com</string>
-    <string name="custom_url_scheme">app.pijulcel.com</string>
+    <string name="package_name">com.pijulcel.app</string>
+    <string name="custom_url_scheme">com.pijulcel.app</string>
 </resources>

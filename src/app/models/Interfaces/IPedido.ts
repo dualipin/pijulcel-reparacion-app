@@ -7,6 +7,7 @@ export interface IPedido {
   dispositivo: IDispositivo;
   descrip: string | null;
   audio: string | null;
+  video: string | null;
   img1: string | null;
   img2: string | null;
   estatus: string;

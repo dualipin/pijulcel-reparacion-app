@@ -1,4 +1,4 @@
-package app.pijulcel.com;
+package com.pijulcel.app;
 
 import com.getcapacitor.BridgeActivity;
 

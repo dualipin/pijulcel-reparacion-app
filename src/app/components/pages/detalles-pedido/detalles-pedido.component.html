@@ -41,6 +41,12 @@
         <ion-note slot="end">{{ pedido.dispositivo.nombre }}</ion-note>
       </ion-item>
 
+      <ion-item *ngIf="pedido.dispositivo.color">
+        <ion-icon name="color-palette-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Color</ion-label>
+        <ion-note slot="end">{{ pedido.dispositivo.color }}</ion-note>
+      </ion-item>
+
       <ion-item>
         <ion-icon name="flag-outline" slot="start" color="medium"></ion-icon>
         <ion-label>Estatus</ion-label>
@@ -99,6 +105,11 @@
             </ion-col>
             <ion-col size="6" *ngIf="pedido.img2">
               <ion-img [src]="imgUrl + pedido.img2" class="pedido-img"></ion-img>
+            </ion-col>
+          </ion-row>
+          <ion-row *ngIf="pedido.video">
+            <ion-col size="12">
+              <video [src]="imgUrl + pedido.video" controls style="width: 100%; border-radius: 8px;"></video>
             </ion-col>
           </ion-row>
         </ion-grid>

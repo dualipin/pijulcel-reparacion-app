@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { addIcons } from 'ionicons';
 import { searchOutline, settings } from 'ionicons/icons';
-import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import { IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import {
@@ -31,9 +30,6 @@ import {
   IonProgressBar,
   IonButton,
   IonSpinner,
-  IonList,
-  IonItem,
-  IonLabel,
 } from '@ionic/angular/standalone';
 
 @Component({
@@ -119,33 +115,10 @@ export class ConfigImpresoraComponent implements OnInit {
     }
   }
 
-  private async tryAutoDetectScanBaseIp() {
-    if (!Capacitor.isNativePlatform()) {
-      return;
-    }
-
-    try {
-      const networkInterface = (window as any)?.networkinterface;
-      if (!networkInterface?.getWiFiIPAddress) {
-        return;
-      }
-
-      await new Promise<void>((resolve) => {
-        networkInterface.getWiFiIPAddress(
-          (info: { ip?: string }) => {
-            if (info?.ip) {
-              this.setBaseIpFromConfiguredIp(info.ip);
-            }
-            resolve();
-          },
-          (error: unknown) => {
-            console.log('No se pudo obtener la IP local del dispositivo:', error);
-            resolve();
-          }
-        );
-      });
-    } catch (error) {
-      console.log('No se pudo obtener la IP local del dispositivo:', error);
+  private async autoDetectSubnet() {
+    const subnet = await this.printer.detectSubnet();
+    if (subnet) {
+      this.printerForm.patchValue({ scanBaseIp: subnet }, { emitEvent: false });
     }
   }
 
@@ -235,15 +208,13 @@ export class ConfigImpresoraComponent implements OnInit {
       scanBaseIp: [''],
     });
 
-    // Cargar configuración guardada
     const saved = await Preferences.get({ key: 'printer_config' });
     if (saved.value) {
       const data = JSON.parse(saved.value);
       this.printerForm.patchValue(data);
       this.setBaseIpFromConfiguredIp(data.ip);
-    } else {
-      await this.tryAutoDetectScanBaseIp();
     }
+    await this.autoDetectSubnet();
     // Rellenar automáticamente el segmento de red cuando cambia el campo IP
     this.printerForm
       .get('ip')

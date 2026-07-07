@@ -22,4 +22,8 @@ export const routes: Routes = [
       { path: 'config-impresora', component: ConfigImpresoraComponent }
     ]
   },
+  {
+    path: 'upload-video',
+    loadComponent: () => import('./pages/upload-video/upload-video.page').then( m => m.UploadVideoPage)
+  },
 ];

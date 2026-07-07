@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
+import { CapacitorHttp } from '@capacitor/core';
 import { DataEncoding, TcpSocket } from 'capacitor-tcp-socket';
 
 interface PrinterConfig {
@@ -11,12 +12,11 @@ interface PrinterConfig {
 export class PrinterService {
 
   private readonly printerConfigKey = 'printer_config';
-  private readonly scanBatchSize = 20;
-  private readonly scanTimeoutMs = 400;
+  private readonly scanBatchSize = 30;
+  private readonly scanTimeoutMs = 500;
 
-  // 🔹 Comando TSPL de prueba (texto centrado)
   private readonly testCmd = `
-    SIZE 40 mm,30 mm
+    SIZE 50 mm,30 mm
     GAP 2 mm,0
     DENSITY 10
     CLS
@@ -59,7 +59,7 @@ export class PrinterService {
   private async resolvePrinterTarget(ip?: string, port: number = 9100): Promise<{ ip: string; port: number }> {
     const savedConfig = await this.getStoredPrinterConfig();
 
-    if (savedConfig?.ip) {
+    if (savedConfig?.ip && !ip) {
       return {
         ip: this.normalizeIp(savedConfig.ip),
         port: Number(savedConfig.port ?? port ?? 9100),
@@ -82,6 +82,32 @@ export class PrinterService {
     return this.getStoredPrinterConfig();
   }
 
+  async getLocalIP(): Promise<string> {
+    try {
+      const ni = (window as any)?.networkinterface;
+      if (ni?.getWiFiIPAddress) {
+        return await new Promise<string>((resolve, reject) => {
+          ni.getWiFiIPAddress(
+            (info: { ip?: string }) => resolve(info?.ip || ''),
+            () => reject()
+          );
+        });
+      }
+    } catch { }
+    return '';
+  }
+
+  async detectSubnet(): Promise<string> {
+    const localIp = await this.getLocalIP();
+    if (localIp) {
+      const parts = localIp.trim().split('.');
+      if (parts.length === 4) {
+        return parts.slice(0, 3).join('.');
+      }
+    }
+    return '';
+  }
+
   async scanNetworkForPrinters(baseIp: string, port: number = 9100): Promise<string[]> {
     const normalizedBaseIp = this.normalizeBaseIp(baseIp);
 
@@ -97,7 +123,7 @@ export class PrinterService {
 
       for (let host = start; host <= end; host++) {
         const targetIp = `${normalizedBaseIp}.${host}`;
-        scanPromises.push(this.checkPrinterOnIp(targetIp, port, foundPrinters));
+        scanPromises.push(this.checkPrinterPort(targetIp, port, foundPrinters));
       }
 
       await Promise.all(scanPromises);
@@ -106,66 +132,42 @@ export class PrinterService {
     return foundPrinters;
   }
 
-  private async checkPrinterOnIp(ip: string, port: number, foundList: string[]): Promise<void> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let client: number | null = null;
-
+  private async checkPrinterPort(ip: string, port: number, foundList: string[]): Promise<void> {
     try {
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Timeout')), this.scanTimeoutMs);
-      });
+      const connectPromise = TcpSocket.connect({ ipAddress: ip, port });
+      
+      const timeoutPromise = new Promise<{ client?: number }>((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), this.scanTimeoutMs)
+      );
 
-      const connectPromise = TcpSocket.connect({
-        ipAddress: ip,
-        port,
-      });
-
-      const result = await Promise.race([connectPromise, timeoutPromise]) as { client: number };
-      client = result.client;
-      foundList.push(ip);
-    } catch (error) {
-      return;
-    } finally {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      const result = await Promise.race([connectPromise, timeoutPromise]);
+      
+      if (result && result.client !== undefined) {
+        foundList.push(ip);
+        // Desconectar inmediatamente después de encontrarla
+        await TcpSocket.disconnect({ client: result.client });
       }
-
-      if (client !== null) {
-        try {
-          await TcpSocket.disconnect({ client });
-        } catch (disconnectError) {
-          console.warn('⚠️ No se pudo cerrar la conexión TCP:', disconnectError);
-        }
-      }
+    } catch (error: any) {
+      // Ignorar errores de conexión (refused, timeout, host unreachable)
     }
   }
 
-  /**
-   * 🔍 Testea conexión con la impresora
-   * @param ip Dirección IP de la impresora
-   * @param port Puerto TCP (por defecto 9100)
-   */
   async testPrint(ip?: string, port: number = 9100): Promise<boolean> {
     try {
       const target = await this.resolvePrinterTarget(ip, port);
 
-      // 1️⃣ Conectar
-      const result = await TcpSocket.connect({
+      const { client } = await TcpSocket.connect({
         ipAddress: target.ip,
         port: target.port,
       });
-
-      const client = result.client;
       console.log('✅ Conectado a la impresora', client);
 
-      // 2️⃣ Enviar comando de prueba
       await TcpSocket.send({
         client,
         data: this.testCmd,
         encoding: DataEncoding.UTF8,
       });
 
-      // 3️⃣ Desconectar
       await TcpSocket.disconnect({ client });
       console.log('✅ Impresión enviada correctamente');
       return true;
@@ -175,24 +177,18 @@ export class PrinterService {
     }
   }
 
-  /**
-   * 🖨️ Enviar comando ZPL a la impresora (por TCP/IP)
-   */
   async sendZPL(ip?: string, port: number = 9100, zplCommand: string = ''): Promise<boolean> {
     try {
       const target = await this.resolvePrinterTarget(ip, port);
 
-      // 1️⃣ Conectar
       const { client } = await TcpSocket.connect({ ipAddress: target.ip, port: target.port });
 
-      // 2️⃣ Enviar como texto UTF-8
       await TcpSocket.send({
         client,
         data: zplCommand,
         encoding: DataEncoding.UTF8,
       });
 
-      // 3️⃣ Cerrar conexión
       await TcpSocket.disconnect({ client });
       console.log('✅ ZPL enviado correctamente');
       return true;
@@ -201,6 +197,5 @@ export class PrinterService {
       return false;
     }
   }
-
 
 }

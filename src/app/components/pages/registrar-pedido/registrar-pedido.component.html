@@ -48,6 +48,11 @@
           formControlName="device_name" type="text" placeholder="Motorola G20 Plus">
         </ion-input>
 
+        <!-- Color del Dispositivo -->
+        <ion-input class="item-form" label="Color del dispositivo" label-placement="floating" fill="outline"
+          formControlName="device_color" type="text" placeholder="Negro" style="margin-top: 15px;">
+        </ion-input>
+
       </ion-card-content>
     </ion-card>
 
@@ -88,6 +93,44 @@
 
         </div>
 
+
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Subir Video -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="play-outline"></ion-icon>
+          Video (Opcional)
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-text color="medium">Máx. 50 MB</ion-text><br />
+
+        <ion-button color="secondary" expand="block" (click)="seleccionarVideo()" *ngIf="!videoPreviewURL && !isCompressingVideo">
+          <ion-icon name="videocam-outline" style="margin-right: 1vh;"></ion-icon>
+          Seleccionar Video
+        </ion-button>
+
+        <ion-button color="danger" expand="block" (click)="grabarVideo()" *ngIf="!videoPreviewURL && !isCompressingVideo" style="margin-top: 10px;">
+          <ion-icon name="radio-button-on-outline" style="margin-right: 1vh;"></ion-icon>
+          Grabar Video
+        </ion-button>
+
+
+        <div *ngIf="isCompressingVideo" style="text-align: center; margin-top: 15px;">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Comprimiendo video, por favor espera...</p>
+        </div>
+
+        <div *ngIf="videoPreviewURL" style="text-align: center; margin-top: 15px;">
+          <video [src]="videoPreviewURL" controls style="max-width: 100%; max-height: 200px; border-radius: 8px;"></video>
+          <ion-button color="danger" expand="block" (click)="deleteVideo()" style="margin-top: 10px;">
+            <ion-icon name="trash" style="margin-right: 1vh;"></ion-icon>
+            Quitar Video
+          </ion-button>
+        </div>
 
       </ion-card-content>
     </ion-card>
