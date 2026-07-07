@@ -391,7 +391,7 @@ export class RegistrarPedidoComponent {
       }).then(alert => alert.present());
 
       // 7️⃣ Imprimir
-      await this.imprimirPedido(pedido.cliente.nombre, pedido.cliente.telefono, pedido.barCode.toString());
+      await this.imprimirPedido(pedido.cliente.nombre, pedido.cliente.telefono, pedido.dispositivo.nombre, pedido.dispositivo.color || '', pedido.barCode.toString());
 
       // 8️⃣ Reset del formulario
       this.pedidoForm.reset();
@@ -426,7 +426,7 @@ export class RegistrarPedidoComponent {
   }
 
 
-  async imprimirPedido(name_cli: string, tel_cli: string, bar_code: string) {
+  async imprimirPedido(name_cli: string, tel_cli: string, device_name: string, device_color: string, bar_code: string) {
     try {
       const config = await Preferences.get({ key: 'printer_config' });
       if (!config.value) return;
@@ -444,14 +444,19 @@ export class RegistrarPedidoComponent {
 ^FD${name_cli}^FS
 
 ^A0N,20,20
-^FO0,40
+^FO0,35
 ^FB400,1,0,C,0
 ^FD${tel_cli}^FS
 
+^A0N,20,20
+^FO0,60
+^FB400,1,0,C,0
+^FD${device_name} - ${device_color || 'Sin color'}^FS
+
 ^LH50,0        // margen solo para el código
-^FO0,75
+^FO0,85
 ^BY1.5
-^BCN,100,Y,N,N
+^BCN,90,Y,N,N
 ^FD${bar_code}^FS
 
 ^XZ`;

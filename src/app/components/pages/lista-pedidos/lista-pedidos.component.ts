@@ -200,18 +200,22 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
 ^FD${pedido.cliente.nombre}^FS
 
 ^A0N,20,20
-^FO0,40
+^FO0,35
 ^FB400,1,0,C,0
 ^FD${pedido.cliente.telefono}^FS
 
+^A0N,20,20
+^FO0,60
+^FB400,1,0,C,0
+^FD${pedido.dispositivo.nombre} - ${pedido.dispositivo.color || 'Sin color'}^FS
+
 ^LH50,0        // margen solo para el código
-^FO0,75
+^FO0,85
 ^BY1.5
-^BCN,100,Y,N,N
+^BCN,90,Y,N,N
 ^FD${pedido.barCode}^FS
 
 ^XZ`;
-
 
 
               await this.printerService.sendZPL(ip, port, zpl);
