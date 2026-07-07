@@ -159,13 +159,38 @@ export class RegistrarPedidoComponent {
       }
 
       if (currentSize > MAX_SIZE_BYTES) {
-        this.isCompressingVideo = false;
-        this.alertCtrl.create({
-          header: 'Video muy pesado',
-          message: 'El archivo no puede superar los 50 MB.',
-          buttons: ['OK']
-        }).then(alert => alert.present());
-        return;
+         if (Capacitor.getPlatform() === 'web') {
+           this.isCompressingVideo = false;
+           this.alertCtrl.create({
+             header: 'Video muy pesado',
+             message: 'El video no debe superar los 50MB. La compresión automática solo está disponible en dispositivos móviles.',
+             buttons: ['OK']
+           }).then(alert => alert.present());
+           return;
+         }
+
+         currentPath = await this.compressionService.compress720(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
+         currentSize = await this.getFileSize(currentPath);
+
+         if (currentSize > MAX_SIZE_BYTES) {
+           currentPath = await this.compressionService.compress540(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
+           currentSize = await this.getFileSize(currentPath);
+         }
+         
+         if (currentSize > MAX_SIZE_BYTES) {
+           currentPath = await this.compressionService.compress480(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
+           currentSize = await this.getFileSize(currentPath);
+         }
+
+         if (currentSize > MAX_SIZE_BYTES) {
+           this.isCompressingVideo = false;
+           this.alertCtrl.create({
+             header: 'Video muy pesado',
+             message: 'El video sigue superando los 50MB después de la compresión.',
+             buttons: ['OK']
+           }).then(alert => alert.present());
+           return;
+         }
       }
 
       let blob: Blob;
