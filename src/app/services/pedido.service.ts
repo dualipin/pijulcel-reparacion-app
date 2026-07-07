@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, timeout } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { AuthService } from './auth.service';
 import { IPedido } from '../models/Interfaces/IPedido';
@@ -14,11 +14,12 @@ export class PedidoService {
 
   private urlApi: string = environment.apiUrl + '/pedidos';
 
-  constructor(private http: HttpClient, private authServ: AuthService) {
-    }
+  constructor(private http: HttpClient, private authServ: AuthService) {}
 
   public register(body: any): Observable<any> {
-    return this.http.post(`${this.urlApi}`, body, { headers: this.authServ.getHeader() });
+    return this.http.post(`${this.urlApi}`, body, { headers: this.authServ.getHeader() }).pipe(
+      timeout(60000)
+    );
   }
 
   public getAll(): Observable<any> {

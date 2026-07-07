@@ -46,7 +46,7 @@ export class RegistrarPedidoComponent {
   audioBase64!: string;
   audioURL!: string;
 
-  videoFile?: File;
+  videoFile?: Blob;
   videoPreviewURL?: string;
 
   constructor(
@@ -202,7 +202,7 @@ export class RegistrarPedidoComponent {
       }
 
       this.videoPreviewURL = URL.createObjectURL(blob);
-      this.videoFile = new File([blob], videoFile.name || 'video.mp4', { type: videoFile.mimeType || 'video/mp4' });
+      this.videoFile = blob; // Usar Blob puro para evitar bugs de la clase File en webview
       
       this.isCompressingVideo = false;
     } catch (error) {
@@ -347,7 +347,8 @@ export class RegistrarPedidoComponent {
 
     // 4.5️⃣ Agregar video (si existe)
     if (this.videoFile) {
-      formData.append("video", this.videoFile, this.videoFile.name);
+      // Nombre de archivo seguro para evitar bugs con caracteres especiales en el multipart header
+      formData.append("video", this.videoFile, "video.mp4");
     }
 
     try {
