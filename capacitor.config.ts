@@ -9,9 +9,6 @@ const config: CapacitorConfig = {
     androidScheme: "http" // fuerza http
   },
   plugins: {
-    CapacitorHttp: {
-      enabled: true
-    },
     SafeArea: {
       enabled: true,
       customColorsForSystemBars: true,

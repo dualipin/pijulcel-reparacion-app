@@ -202,26 +202,25 @@ export class RegistrarPedidoComponent {
          }
       } else {
          try {
-           const readFile = await Filesystem.readFile({ path: currentPath });
-           const base64Data = readFile.data as string;
-           const mimeType = videoFile.mimeType || 'video/mp4';
-           
-           // Decodificación en chunks para evitar OOM (Out Of Memory) en Android
-           const byteCharacters = atob(base64Data);
-           const byteArrays = [];
-           const sliceSize = 1024;
-           for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-             const slice = byteCharacters.slice(offset, offset + sliceSize);
-             const byteNumbers = new Array(slice.length);
-             for (let i = 0; i < slice.length; i++) {
-               byteNumbers[i] = slice.charCodeAt(i);
-             }
-             byteArrays.push(new Uint8Array(byteNumbers));
-           }
-           blob = new Blob(byteArrays, { type: mimeType });
-           
+           const webPath = Capacitor.convertFileSrc(currentPath);
+           blob = await new Promise((resolve, reject) => {
+             const xhr = new XMLHttpRequest();
+             xhr.open('GET', webPath, true);
+             xhr.responseType = 'blob';
+             xhr.onload = function() {
+               if (this.status >= 200 && this.status < 300) {
+                 resolve(this.response);
+               } else {
+                 reject(new Error(`Error status: ${this.status}`));
+               }
+             };
+             xhr.onerror = function() {
+               reject(new Error('Network error loading video blob'));
+             };
+             xhr.send();
+           });
          } catch (fsError) {
-           console.error("Error leyendo archivo con Filesystem", fsError);
+           console.error("Error cargando blob nativo, usando fetch fallback", fsError);
            const webPath = Capacitor.convertFileSrc(currentPath);
            blob = await fetch(webPath).then(r => r.blob());
          }
