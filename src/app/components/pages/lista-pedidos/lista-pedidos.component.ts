@@ -154,8 +154,8 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
         (pedido) => {
           console.log('Filtrando pedido:', pedido);
-          pedido.barCode === result.barcodes[0].rawValue ? (encontrado = true) : false;
-          return pedido.barCode === result.barcodes[0].rawValue;
+          String(pedido.barCode) === String(result.barcodes[0].rawValue) ? (encontrado = true) : false;
+          return String(pedido.barCode) === String(result.barcodes[0].rawValue);
         }
       );
 
@@ -190,30 +190,29 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
               const { ip, port } = JSON.parse(config.value);
 
               const zpl = `^XA
-^PW400
+^PW380
+^LL240
 ^LH0,0
 ^CI28
 
 ^A0N,25,25
-^FO0,10
-^FB400,1,0,C,0
+^FO0,5
+^FB380,1,0,C,0
 ^FD${pedido.cliente.nombre}^FS
 
-^A0N,20,20
+^A0N,25,25
 ^FO0,35
-^FB400,1,0,C,0
+^FB380,1,0,C,0
 ^FD${pedido.cliente.telefono}^FS
 
-^A0N,20,20
-^FO0,60
-^FB400,1,0,C,0
+^A0N,25,25
+^FO0,65
+^FB380,1,0,C,0
 ^FD${pedido.dispositivo.nombre} - ${pedido.dispositivo.color || 'Sin color'}^FS
 
-^LH50,0        // margen solo para el código
-^FO0,85
-^BY1.5
-^BCN,90,Y,N,N
-^FD${pedido.barCode}^FS
+^FO130,95
+^BQN,2,5
+^FDQA,${pedido.barCode}^FS
 
 ^XZ`;
 

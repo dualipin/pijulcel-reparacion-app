@@ -7,7 +7,7 @@ import { IPedido } from 'src/app/models/Interfaces/IPedido';
 import { environment } from 'src/environments/environment';
 import { PedidoService } from 'src/app/services/pedido.service';
 import { lastValueFrom } from 'rxjs';
-import { alertCircleOutline, barcodeOutline, callOutline, construct, flagOutline, hardwareChipOutline, imagesOutline, logoWhatsapp, personCircleOutline, refreshOutline, timeOutline, colorPaletteOutline, videocamOutline } from 'ionicons/icons';
+import { alertCircleOutline, barcodeOutline, callOutline, construct, flagOutline, hardwareChipOutline, imagesOutline, logoWhatsapp, personCircleOutline, refreshOutline, timeOutline, colorPaletteOutline, videocamOutline, printOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -42,7 +42,7 @@ export class DetallesPedidoComponent implements OnInit {
     private cameraServ: CameraService,
     private pedidoServ: PedidoService
   ) {
-    addIcons({ alertCircleOutline, personCircleOutline, callOutline, barcodeOutline, construct, logoWhatsapp, imagesOutline, hardwareChipOutline, flagOutline, timeOutline, refreshOutline, colorPaletteOutline, videocamOutline });
+    addIcons({ alertCircleOutline, personCircleOutline, callOutline, barcodeOutline, construct, logoWhatsapp, imagesOutline, hardwareChipOutline, flagOutline, timeOutline, refreshOutline, colorPaletteOutline, videocamOutline, printOutline });
     this.pedido = {
       barCode: "",
       cliente: {

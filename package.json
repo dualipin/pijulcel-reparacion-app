@@ -38,6 +38,7 @@
     "@ionic/angular": "^8.0.0",
     "@ionic/pwa-elements": "^3.3.0",
     "@stomp/stompjs": "^7.2.1",
+    "barcode-detector": "^3.2.0",
     "bun": "^1.2.22",
     "capacitor-native-biometric": "^4.2.2",
     "capacitor-plugin-safe-area": "^4.0.0",

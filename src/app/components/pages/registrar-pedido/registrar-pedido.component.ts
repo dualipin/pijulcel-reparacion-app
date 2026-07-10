@@ -434,30 +434,29 @@ export class RegistrarPedidoComponent {
       const { ip, port } = JSON.parse(config.value);
 
       const zpl = `^XA
-^PW400
+^PW380
+^LL240
 ^LH0,0
 ^CI28
 
 ^A0N,25,25
-^FO0,10
-^FB400,1,0,C,0
+^FO0,5
+^FB380,1,0,C,0
 ^FD${name_cli}^FS
 
-^A0N,20,20
+^A0N,25,25
 ^FO0,35
-^FB400,1,0,C,0
+^FB380,1,0,C,0
 ^FD${tel_cli}^FS
 
-^A0N,20,20
-^FO0,60
-^FB400,1,0,C,0
+^A0N,25,25
+^FO0,65
+^FB380,1,0,C,0
 ^FD${device_name} - ${device_color || 'Sin color'}^FS
 
-^LH50,0        // margen solo para el código
-^FO0,85
-^BY1.5
-^BCN,90,Y,N,N
-^FD${bar_code}^FS
+^FO130,95
+^BQN,2,5
+^FDQA,${bar_code}^FS
 
 ^XZ`;
 

@@ -72,6 +72,23 @@
       </ion-item>
     </ion-list>
 
+    <!-- Preview de la Etiqueta -->
+    <ion-card *ngIf="pedido.barCode">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="print-outline"></ion-icon> Previsualización de Etiqueta
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content style="text-align: center;">
+        <div style="border: 2px dashed #ccc; padding: 20px; display: inline-block; width: 100%; max-width: 300px; background-color: #fff; color: #000;">
+          <h2 style="font-weight: bold; margin: 5px 0; font-size: 1.5em;">{{ pedido.cliente.nombre }}</h2>
+          <h3 style="margin: 5px 0; font-size: 1.3em;">{{ pedido.cliente.telefono }}</h3>
+          <h4 style="margin: 5px 0 15px 0; font-size: 1.2em;">{{ pedido.dispositivo.nombre }} - {{ pedido.dispositivo.color || 'Sin color' }}</h4>
+          <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + pedido.barCode" alt="QR Code" style="margin-top: 10px; width: 150px; height: 150px;" />
+        </div>
+      </ion-card-content>
+    </ion-card>
+
     <!-- Problema Reportado -->
     <ion-card>
       <ion-card-header>

@@ -9,6 +9,11 @@ import { environment } from './environments/environment.prod';
 import { enableProdMode } from '@angular/core';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 import { provideHttpClient } from '@angular/common/http';
+import { BarcodeDetector } from 'barcode-detector';
+
+if (!('BarcodeDetector' in window)) {
+  (window as any).BarcodeDetector = BarcodeDetector;
+}
 
 if (environment.production) {
   enableProdMode();
