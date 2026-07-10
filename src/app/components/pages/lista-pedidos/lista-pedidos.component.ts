@@ -143,31 +143,71 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     }
   }
 
+  isWebScanning = false;
+
   async startScan() {
-    const result = await BarcodeScanner.scan();
-    if (result.barcodes.length > 0) {
+    const platform = Capacitor.getPlatform();
 
-      console.log('Código detectado:', result.barcodes[0].rawValue);
-
-      let encontrado = false;
-
-      this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
-        (pedido) => {
-          console.log('Filtrando pedido:', pedido);
-          String(pedido.barCode) === String(result.barcodes[0].rawValue) ? (encontrado = true) : false;
-          return String(pedido.barCode) === String(result.barcodes[0].rawValue);
+    if (platform === 'web') {
+      this.isWebScanning = true;
+      
+      // Esperamos un tick para que Angular renderice el elemento <video>
+      setTimeout(async () => {
+        const videoElement = document.getElementById('webScannerVideo') as HTMLVideoElement;
+        if (videoElement) {
+          try {
+            await BarcodeScanner.startScan({ videoElement: videoElement });
+            BarcodeScanner.addListener('barcodesScanned', async (result: any) => {
+              if (result.barcodes.length > 0) {
+                await this.stopWebScan();
+                this.procesarCodigo(result.barcodes[0].rawValue);
+              }
+            });
+          } catch (error) {
+            console.error('Error iniciando escaneo web:', error);
+            this.isWebScanning = false;
+          }
         }
-      );
-
-      if (!encontrado) {
-        const alert = await this.alertCtrl.create({
-          header: 'No encontrado',
-          message: 'El código escaneado no coincide con ningún pedido.',
-          buttons: ['Aceptar']
-        });
-        await alert.present();
-        this.pedidosFiltrados = this.pedidoServ.pedidos;
+      }, 100);
+      
+    } else {
+      // Dispositivos móviles (Android/iOS)
+      try {
+        const result = await BarcodeScanner.scan();
+        if (result.barcodes.length > 0) {
+          this.procesarCodigo(result.barcodes[0].rawValue);
+        }
+      } catch (error) {
+        console.error('Error escaneando:', error);
       }
+    }
+  }
+
+  async stopWebScan() {
+    this.isWebScanning = false;
+    await BarcodeScanner.stopScan();
+    await BarcodeScanner.removeAllListeners();
+  }
+
+  async procesarCodigo(codigo: string) {
+    console.log('Código detectado:', codigo);
+
+    let encontrado = false;
+    this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+      (pedido) => {
+        String(pedido.barCode) === String(codigo) ? (encontrado = true) : false;
+        return String(pedido.barCode) === String(codigo);
+      }
+    );
+
+    if (!encontrado) {
+      const alert = await this.alertCtrl.create({
+        header: 'No encontrado',
+        message: 'El código escaneado no coincide con ningún pedido.',
+        buttons: ['Aceptar']
+      });
+      await alert.present();
+      this.pedidosFiltrados = this.pedidoServ.pedidos;
     }
   }
 

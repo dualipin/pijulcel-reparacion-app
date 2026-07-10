@@ -26,6 +26,13 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
+  <div *ngIf="isWebScanning" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: black; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <video id="webScannerVideo" style="width: 100%; max-height: 80%; object-fit: cover;" autoplay playsinline></video>
+    <ion-button color="danger" (click)="stopWebScan()" style="margin-top: 20px;">
+      Cancelar
+    </ion-button>
+  </div>
+
   <ion-list *ngIf="pedidosFiltrados.length > 0; else sinPedidos">
     <ion-item *ngFor="let pedido of pedidosFiltrados">
       <!-- Imagen desde FileSystem -->
