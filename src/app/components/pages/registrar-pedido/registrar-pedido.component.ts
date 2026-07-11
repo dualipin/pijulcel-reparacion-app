@@ -3,21 +3,17 @@ import { addIcons } from 'ionicons';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { camera, checkmarkCircleOutline, documentTextOutline, imageOutline, images, imagesOutline, micOutline, playOutline, stopCircleOutline, trash, radioButtonOnOutline, videocamOutline } from 'ionicons/icons';
+import { camera, checkmarkCircleOutline, documentTextOutline, imageOutline, images, imagesOutline, micOutline, playOutline, stopCircleOutline, trash, calendarOutline } from 'ionicons/icons';
 import { AlertController, IonicModule, RefresherCustomEvent } from '@ionic/angular';
 import { Preferences } from '@capacitor/preferences';
 import { PrinterService } from 'src/app/services/printer.service';
 import { CameraService } from 'src/app/services/camera.service';
 import { PedidoService } from 'src/app/services/pedido.service';
-import { VideoPickerService } from 'src/app/services/video-picker.service';
-import { VideoMetadataService } from 'src/app/services/video-metadata.service';
-import { VideoCompressionService } from 'src/app/services/video-compression.service';
-import { Filesystem } from '@capacitor/filesystem';
-import { Capacitor } from '@capacitor/core';
 
 import {
   IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea, IonSpinner,
-  IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent
+  IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
+  IonDatetime, IonDatetimeButton, IonModal, IonText
 
 } from '@ionic/angular/standalone';
 
@@ -29,7 +25,7 @@ import {
     IonicModule, CommonModule,
     ReactiveFormsModule, FormsModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
     IonInput, IonTextarea, IonButton, IonIcon, IonSpinner,
-    IonRefresher, IonRefresherContent
+    IonRefresher, IonRefresherContent, IonDatetime, IonDatetimeButton, IonModal, IonText
   ]
 })
 export class RegistrarPedidoComponent {
@@ -46,20 +42,19 @@ export class RegistrarPedidoComponent {
   audioBase64!: string;
   audioURL!: string;
 
-  videoFile?: Blob;
-  videoPreviewURL?: string;
+  readonly MAX_IMAGENES = 4;
+
+  minDeliveryDate: string;
 
   constructor(
     private fb: FormBuilder,
     private alertCtrl: AlertController,
     private printerService: PrinterService,
     private cameraServ: CameraService,
-    private pedidoServ: PedidoService,
-    private videoPickerService: VideoPickerService,
-    private metadataService: VideoMetadataService,
-    private compressionService: VideoCompressionService
+    private pedidoServ: PedidoService
   ) {
     this.isLoad = true;
+    this.minDeliveryDate = this.toLocalISO(new Date());
     this.pedidoForm = this.fb.group({
       bar_code: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(10)]],
       name_cli: ['', [Validators.required, Validators.maxLength(50)]],
@@ -67,10 +62,16 @@ export class RegistrarPedidoComponent {
       device_name: ['', [Validators.required, Validators.maxLength(60)]],
       device_color: ['', [Validators.maxLength(50)]],
       prob_texto: ['', [Validators.maxLength(510)]],
+      delivery_at: ['', [Validators.required]],
     });
 
     this.generarCodigo();
-    addIcons({ documentTextOutline, trash, images, camera, imageOutline, imagesOutline, checkmarkCircleOutline, playOutline, stopCircleOutline, micOutline, radioButtonOnOutline, videocamOutline });
+    addIcons({ documentTextOutline, trash, images, camera, imageOutline, imagesOutline, checkmarkCircleOutline, playOutline, stopCircleOutline, micOutline, calendarOutline });
+  }
+
+  private toLocalISO(date: Date): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
 
 
@@ -80,10 +81,10 @@ export class RegistrarPedidoComponent {
 
 
   async tomarFoto(desdeGaleria: boolean) {
-    if (this.imagenesPreview.length >= 2) {
+    if (this.imagenesPreview.length >= this.MAX_IMAGENES) {
       this.alertCtrl.create({
         header: 'Límite alcanzado',
-        message: 'Solo se permiten 2 imágenes por pedido.',
+        message: `Solo se permiten ${this.MAX_IMAGENES} imágenes por pedido.`,
         buttons: ['OK']
       }).then(alert => alert.present());
       return;
@@ -99,161 +100,6 @@ export class RegistrarPedidoComponent {
 
   deleteImage(index: number) {
     this.imagenesPreview.splice(index, 1);
-  }
-
-  isCompressingVideo = false;
-
-  async seleccionarVideo() {
-    try {
-      this.isCompressingVideo = true;
-      const videoFile = await this.videoPickerService.pickVideo();
-      if (!videoFile) {
-        this.isCompressingVideo = false;
-        return;
-      }
-      
-      await this.procesarVideo(videoFile);
-      
-    } catch (error) {
-      console.error(error);
-      this.isCompressingVideo = false;
-      this.alertCtrl.create({
-         header: 'Error',
-         message: 'Ocurrió un error al seleccionar el video.',
-         buttons: ['OK']
-      }).then(alert => alert.present());
-    }
-  }
-
-  async grabarVideo() {
-    try {
-      this.isCompressingVideo = true;
-      const videoFile = await this.videoPickerService.recordVideo();
-      if (!videoFile) {
-        this.isCompressingVideo = false;
-        return;
-      }
-
-      await this.procesarVideo(videoFile);
-      
-    } catch (error: any) {
-      console.error(error);
-      this.isCompressingVideo = false;
-      this.alertCtrl.create({
-         header: 'Error',
-         message: error.message || 'Ocurrió un error al grabar el video.',
-         buttons: ['OK']
-      }).then(alert => alert.present());
-    }
-  }
-
-  private async procesarVideo(videoFile: any) {
-    try {
-      const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
-      let currentPath = videoFile.uri;
-      
-      // Intentar obtener size real. Si viene de cámara, puede que no tenga size exacto, usamos getFileSize
-      let currentSize = videoFile.size;
-      if (!currentSize) {
-        currentSize = await this.getFileSize(currentPath);
-      }
-
-      if (currentSize > MAX_SIZE_BYTES) {
-         if (Capacitor.getPlatform() === 'web') {
-           this.isCompressingVideo = false;
-           this.alertCtrl.create({
-             header: 'Video muy pesado',
-             message: 'El video no debe superar los 50MB. La compresión automática solo está disponible en dispositivos móviles.',
-             buttons: ['OK']
-           }).then(alert => alert.present());
-           return;
-         }
-
-         currentPath = await this.compressionService.compress720(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
-         currentSize = await this.getFileSize(currentPath);
-
-         if (currentSize > MAX_SIZE_BYTES) {
-           currentPath = await this.compressionService.compress540(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
-           currentSize = await this.getFileSize(currentPath);
-         }
-         
-         if (currentSize > MAX_SIZE_BYTES) {
-           currentPath = await this.compressionService.compress480(videoFile.uri, videoFile.width || 1920, videoFile.height || 1080);
-           currentSize = await this.getFileSize(currentPath);
-         }
-
-         if (currentSize > MAX_SIZE_BYTES) {
-           this.isCompressingVideo = false;
-           this.alertCtrl.create({
-             header: 'Video muy pesado',
-             message: 'El video sigue superando los 50MB después de la compresión.',
-             buttons: ['OK']
-           }).then(alert => alert.present());
-           return;
-         }
-      }
-
-      let blob: Blob;
-      if (Capacitor.getPlatform() === 'web') {
-         if (videoFile.blob) {
-            blob = videoFile.blob;
-         } else {
-            blob = await fetch(currentPath).then(r => r.blob());
-         }
-      } else {
-         try {
-           const webPath = Capacitor.convertFileSrc(currentPath);
-           blob = await new Promise((resolve, reject) => {
-             const xhr = new XMLHttpRequest();
-             xhr.open('GET', webPath, true);
-             xhr.responseType = 'blob';
-             xhr.onload = function() {
-               if (this.status >= 200 && this.status < 300) {
-                 resolve(this.response);
-               } else {
-                 reject(new Error(`Error status: ${this.status}`));
-               }
-             };
-             xhr.onerror = function() {
-               reject(new Error('Network error loading video blob'));
-             };
-             xhr.send();
-           });
-         } catch (fsError) {
-           console.error("Error cargando blob nativo, usando fetch fallback", fsError);
-           const webPath = Capacitor.convertFileSrc(currentPath);
-           blob = await fetch(webPath).then(r => r.blob());
-         }
-      }
-
-      this.videoPreviewURL = URL.createObjectURL(blob);
-      this.videoFile = blob; // Usar Blob puro para evitar bugs de la clase File en webview
-      
-      this.isCompressingVideo = false;
-    } catch (error) {
-      console.error(error);
-      this.isCompressingVideo = false;
-      this.alertCtrl.create({
-         header: 'Error',
-         message: 'Ocurrió un error al procesar el video.',
-         buttons: ['OK']
-      }).then(alert => alert.present());
-    }
-  }
-
-  private async getFileSize(filePath: string): Promise<number> {
-    try {
-      const stat = await Filesystem.stat({ path: filePath });
-      return stat.size;
-    } catch (e) {
-      console.error('Error reading file size:', e);
-      return 0;
-    }
-  }
-
-  deleteVideo() {
-    this.videoFile = undefined;
-    this.videoPreviewURL = undefined;
   }
 
   async generarCodigo() {
@@ -338,7 +184,8 @@ export class RegistrarPedidoComponent {
         color: this.pedidoForm.get('device_color')?.value || undefined
       },
       barCode: parseInt(this.pedidoForm.get('bar_code')?.value),
-      descrip: this.pedidoForm.get('prob_texto')?.value
+      descrip: this.pedidoForm.get('prob_texto')?.value,
+      deliveryAt: this.pedidoForm.get('delivery_at')?.value?.substring(0, 19)
     };
 
     console.log('Pedido a enviar:', pedido);
@@ -370,12 +217,6 @@ export class RegistrarPedidoComponent {
       formData.append("audio", this.audioBlob, "audio.webm");
     }
 
-    // 4.5️⃣ Agregar video (si existe)
-    if (this.videoFile) {
-      // Nombre de archivo seguro para evitar bugs con caracteres especiales en el multipart header
-      formData.append("video", this.videoFile, "video.mp4");
-    }
-
     try {
       // 5️⃣ Enviar al backend
       const resp = await this.pedidoServ.register(formData).toPromise();
@@ -396,21 +237,20 @@ export class RegistrarPedidoComponent {
       // 8️⃣ Reset del formulario
       this.pedidoForm.reset();
       this.generarCodigo();
+      this.minDeliveryDate = this.toLocalISO(new Date());
       this.audioBlob = new Blob();
       this.audioURL = '';
       this.isRecording = false;
       this.imagenesPreview = [];
-      this.videoFile = undefined;
-      this.videoPreviewURL = undefined;
 
     } catch (error: any) {
       console.error("ERROR al enviar:", error);
-      
+
       let msg = 'No se pudo registrar el pedido.';
       if (error.status === 413) {
-         msg = 'El archivo de video es demasiado pesado para el servidor (Error 413).';
+         msg = 'Los archivos son demasiado pesados para el servidor (Error 413).';
       } else if (error.status === 0) {
-         msg = 'Error de conexión. Puede que el video sea muy pesado o no haya internet.';
+         msg = 'Error de conexión. Puede que las imágenes sean muy pesadas o no haya internet.';
       } else if (error.message) {
          msg += ' ' + error.message;
       }
@@ -470,12 +310,11 @@ export class RegistrarPedidoComponent {
   handleRefresh(event: RefresherCustomEvent) {
     this.pedidoForm.reset();
     this.generarCodigo();
+    this.minDeliveryDate = this.toLocalISO(new Date());
     this.audioBlob = new Blob();
     this.audioURL = '';
     this.isRecording = false;
     this.imagenesPreview = [];
-    this.videoFile = undefined;
-    this.videoPreviewURL = undefined;
     event.target.complete();
   }
 

@@ -53,6 +53,25 @@
           formControlName="device_color" type="text" placeholder="Negro" style="margin-top: 15px;">
         </ion-input>
 
+        <!-- Fecha y hora de entrega -->
+        <ion-item lines="none" fill="outline" style="margin-top: 15px; --border-radius: 8px;">
+          <ion-icon name="calendar-outline" slot="start" color="medium"></ion-icon>
+          <ion-label>Fecha y hora de entrega</ion-label>
+          <ion-datetime-button slot="end" datetime="delivery-picker"></ion-datetime-button>
+        </ion-item>
+        <ion-text color="danger" *ngIf="pedidoForm.get('delivery_at')?.touched && pedidoForm.get('delivery_at')?.invalid">
+          <small>Selecciona la fecha y hora de entrega.</small>
+        </ion-text>
+
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime id="delivery-picker" formControlName="delivery_at" presentation="date-time"
+              locale="es-MX" [hourCycle]="'h23'" [min]="minDeliveryDate" doneText="Confirmar" cancelText="Cancelar"
+              [showDefaultButtons]="true">
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+
       </ion-card-content>
     </ion-card>
 
@@ -66,15 +85,15 @@
       </ion-card-header>
       <ion-card-content>
 
-        <ion-text color="medium">Máx. 2 imágenes</ion-text><br />
+        <ion-text color="medium">Máx. {{ MAX_IMAGENES }} imágenes ({{ imagenesPreview.length }}/{{ MAX_IMAGENES }})</ion-text><br />
 
         <!-- Botón para abrir cámara -->
-        <ion-button color="secondary" expand="block" (click)="tomarFoto(false)">
+        <ion-button color="secondary" expand="block" (click)="tomarFoto(false)" [disabled]="imagenesPreview.length >= MAX_IMAGENES">
           <ion-icon name="camera" style="margin-right: 1vh;"></ion-icon>
           Tomar Foto
         </ion-button>
         <!-- Botón para abrir galery -->
-        <ion-button color="danger" expand="block" (click)="tomarFoto(true)">
+        <ion-button color="danger" expand="block" (click)="tomarFoto(true)" [disabled]="imagenesPreview.length >= MAX_IMAGENES">
           <ion-icon name="images" style="margin-right: 1vh;"></ion-icon>
           Elegir de Galería
         </ion-button>
@@ -93,44 +112,6 @@
 
         </div>
 
-
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Subir Video -->
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>
-          <ion-icon name="play-outline"></ion-icon>
-          Video (Opcional)
-        </ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">Máx. 50 MB</ion-text><br />
-
-        <ion-button color="secondary" expand="block" (click)="seleccionarVideo()" *ngIf="!videoPreviewURL && !isCompressingVideo">
-          <ion-icon name="videocam-outline" style="margin-right: 1vh;"></ion-icon>
-          Seleccionar Video
-        </ion-button>
-
-        <ion-button color="danger" expand="block" (click)="grabarVideo()" *ngIf="!videoPreviewURL && !isCompressingVideo" style="margin-top: 10px;">
-          <ion-icon name="radio-button-on-outline" style="margin-right: 1vh;"></ion-icon>
-          Grabar Video
-        </ion-button>
-
-
-        <div *ngIf="isCompressingVideo" style="text-align: center; margin-top: 15px;">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Comprimiendo video, por favor espera...</p>
-        </div>
-
-        <div *ngIf="videoPreviewURL" style="text-align: center; margin-top: 15px;">
-          <video [src]="videoPreviewURL" controls style="max-width: 100%; max-height: 200px; border-radius: 8px;"></video>
-          <ion-button color="danger" expand="block" (click)="deleteVideo()" style="margin-top: 10px;">
-            <ion-icon name="trash" style="margin-right: 1vh;"></ion-icon>
-            Quitar Video
-          </ion-button>
-        </div>
 
       </ion-card-content>
     </ion-card>

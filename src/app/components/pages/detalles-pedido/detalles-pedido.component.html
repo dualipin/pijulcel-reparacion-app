@@ -60,6 +60,12 @@
       </ion-item>
 
       <ion-item>
+        <ion-icon name="calendar-outline" slot="start" color="medium"></ion-icon>
+        <ion-label>Entrega</ion-label>
+        <ion-note slot="end">{{ pedido.deliveryAt | date:'short' }}</ion-note>
+      </ion-item>
+
+      <ion-item>
         <ion-icon name="time-outline" slot="start" color="medium"></ion-icon>
         <ion-label>Creado</ion-label>
         <ion-note slot="end">{{ pedido.created | date:'short' }}</ion-note>
@@ -122,6 +128,12 @@
             </ion-col>
             <ion-col size="6" *ngIf="pedido.img2">
               <ion-img [src]="imgUrl + pedido.img2" class="pedido-img"></ion-img>
+            </ion-col>
+            <ion-col size="6" *ngIf="pedido.img3">
+              <ion-img [src]="imgUrl + pedido.img3" class="pedido-img"></ion-img>
+            </ion-col>
+            <ion-col size="6" *ngIf="pedido.img4">
+              <ion-img [src]="imgUrl + pedido.img4" class="pedido-img"></ion-img>
             </ion-col>
           </ion-row>
           <ion-row *ngIf="pedido.video">

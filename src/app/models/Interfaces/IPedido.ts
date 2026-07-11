@@ -10,6 +10,9 @@ export interface IPedido {
   video: string | null;
   img1: string | null;
   img2: string | null;
+  img3: string | null;
+  img4: string | null;
+  deliveryAt: string | Date;
   estatus: string;
   created: string | Date;
   updated: string | Date;
