@@ -51,6 +51,11 @@
         <p style="font-weight: bold;">{{ pedido.cliente.nombre }}</p>
         <p>Tel: {{ pedido.cliente.telefono }}</p>
         <p>Fecha: {{ pedido.created | date:'short' }}</p>
+        <p *ngIf="pedido.deliveryAt && pedido.estatus !== 'Entregado'"
+          style="display: flex; align-items: center; gap: 8px;">
+          Entrega: {{ pedido.deliveryAt | date:'short' }}
+          <ion-badge [color]="getEntregaColor(pedido)">{{ getEntregaTexto(pedido) }}</ion-badge>
+        </p>
       </ion-label>
 
       <!-- Botón de acciones -->

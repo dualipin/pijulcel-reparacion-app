@@ -13,7 +13,7 @@ import { PedidoService } from 'src/app/services/pedido.service';
 import {
   IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea, IonSpinner,
   IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonDatetime, IonDatetimeButton, IonModal, IonText
+  IonText
 
 } from '@ionic/angular/standalone';
 
@@ -25,7 +25,7 @@ import {
     IonicModule, CommonModule,
     ReactiveFormsModule, FormsModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
     IonInput, IonTextarea, IonButton, IonIcon, IonSpinner,
-    IonRefresher, IonRefresherContent, IonDatetime, IonDatetimeButton, IonModal, IonText
+    IonRefresher, IonRefresherContent, IonText
   ]
 })
 export class RegistrarPedidoComponent {
@@ -54,7 +54,7 @@ export class RegistrarPedidoComponent {
     private pedidoServ: PedidoService
   ) {
     this.isLoad = true;
-    this.minDeliveryDate = this.toLocalISO(new Date());
+    this.minDeliveryDate = this.toDateInputValue(new Date());
     this.pedidoForm = this.fb.group({
       bar_code: [{ value: '', disabled: true }, [Validators.required, Validators.maxLength(10)]],
       name_cli: ['', [Validators.required, Validators.maxLength(50)]],
@@ -62,18 +62,18 @@ export class RegistrarPedidoComponent {
       device_name: ['', [Validators.required, Validators.maxLength(60)]],
       device_color: ['', [Validators.maxLength(50)]],
       prob_texto: ['', [Validators.maxLength(510)]],
-      delivery_at: ['', [Validators.required]],
+      delivery_date: ['', [Validators.required]],
+      delivery_time: ['', [Validators.required]],
     });
 
     this.generarCodigo();
     addIcons({ documentTextOutline, trash, images, camera, imageOutline, imagesOutline, checkmarkCircleOutline, playOutline, stopCircleOutline, micOutline, calendarOutline });
   }
 
-  private toLocalISO(date: Date): string {
+  private toDateInputValue(date: Date): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   }
-
 
   getImage(image: any) {
     return this.cameraServ.getImage(image);
@@ -185,7 +185,7 @@ export class RegistrarPedidoComponent {
       },
       barCode: parseInt(this.pedidoForm.get('bar_code')?.value),
       descrip: this.pedidoForm.get('prob_texto')?.value,
-      deliveryAt: this.pedidoForm.get('delivery_at')?.value?.substring(0, 19)
+      deliveryAt: `${this.pedidoForm.get('delivery_date')?.value}T${this.pedidoForm.get('delivery_time')?.value}:00`
     };
 
     console.log('Pedido a enviar:', pedido);
@@ -237,7 +237,7 @@ export class RegistrarPedidoComponent {
       // 8️⃣ Reset del formulario
       this.pedidoForm.reset();
       this.generarCodigo();
-      this.minDeliveryDate = this.toLocalISO(new Date());
+      this.minDeliveryDate = this.toDateInputValue(new Date());
       this.audioBlob = new Blob();
       this.audioURL = '';
       this.isRecording = false;
@@ -310,7 +310,7 @@ export class RegistrarPedidoComponent {
   handleRefresh(event: RefresherCustomEvent) {
     this.pedidoForm.reset();
     this.generarCodigo();
-    this.minDeliveryDate = this.toLocalISO(new Date());
+    this.minDeliveryDate = this.toDateInputValue(new Date());
     this.audioBlob = new Blob();
     this.audioURL = '';
     this.isRecording = false;

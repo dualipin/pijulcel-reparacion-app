@@ -54,23 +54,15 @@
         </ion-input>
 
         <!-- Fecha y hora de entrega -->
-        <ion-item lines="none" fill="outline" style="margin-top: 15px; --border-radius: 8px;">
-          <ion-icon name="calendar-outline" slot="start" color="medium"></ion-icon>
-          <ion-label>Fecha y hora de entrega</ion-label>
-          <ion-datetime-button slot="end" datetime="delivery-picker"></ion-datetime-button>
-        </ion-item>
-        <ion-text color="danger" *ngIf="pedidoForm.get('delivery_at')?.touched && pedidoForm.get('delivery_at')?.invalid">
-          <small>Selecciona la fecha y hora de entrega.</small>
-        </ion-text>
-
-        <ion-modal [keepContentsMounted]="true">
-          <ng-template>
-            <ion-datetime id="delivery-picker" formControlName="delivery_at" presentation="date-time"
-              locale="es-MX" [hourCycle]="'h23'" [min]="minDeliveryDate" doneText="Confirmar" cancelText="Cancelar"
-              [showDefaultButtons]="true">
-            </ion-datetime>
-          </ng-template>
-        </ion-modal>
+        <ion-text color="medium"><small>Fecha y hora de entrega</small></ion-text>
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+          <ion-input class="item-form" fill="outline" formControlName="delivery_date" type="date"
+            [min]="minDeliveryDate" style="flex: 1;">
+          </ion-input>
+          <ion-input class="item-form" fill="outline" formControlName="delivery_time" type="time"
+            style="flex: 1;">
+          </ion-input>
+        </div>
 
       </ion-card-content>
     </ion-card>

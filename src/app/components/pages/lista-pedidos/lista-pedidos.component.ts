@@ -14,6 +14,7 @@ import { lastValueFrom } from 'rxjs';
 import { IPedido } from 'src/app/models/Interfaces/IPedido';
 import { environment } from 'src/environments/environment';
 import { ExceptionService } from 'src/app/services/exception.service';
+import { NotificationService } from 'src/app/services/notification.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   IonButtons, IonButton, IonFab, IonFabButton,
@@ -51,7 +52,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'layers',
       handler: () => {
         console.log('Todos');
-        this.pedidosFiltrados = this.pedidoServ.pedidos;
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
       }
     },
     {
@@ -59,9 +60,9 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'hourglass-outline',
       handler: () => {
         console.log('Pendientes');
-        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Pendiente"
-        );
+        ));
       }
     },
     {
@@ -69,9 +70,9 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'construct-outline',
       handler: () => {
         console.log('En proceso');
-        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "En proceso"
-        );
+        ));
       }
     },
     {
@@ -79,9 +80,9 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'checkbox-outline',
       handler: () => {
         console.log('Listos para entregar');
-        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Listo"
-        );
+        ));
       }
     },
     {
@@ -89,9 +90,9 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       icon: 'checkbox',
       handler: () => {
         console.log('Entregado');
-        this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(
           (pedido) => pedido.estatus === "Entregado"
-        );
+        ));
       }
 
     },
@@ -111,6 +112,7 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     private cameraServ: CameraService,
     private pedidoServ: PedidoService,
     private exServ: ExceptionService,
+    private notifServ: NotificationService,
     private zone: NgZone
   ) {
     addIcons({ barcodeOutline, apps, ellipsisVertical, informationCircleOutline, camera, print, layers, logoWhatsapp, trash, checkbox, checkboxOutline, constructOutline, hourglassOutline });
@@ -122,7 +124,8 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
       .then(res => {
         console.log('Pedidos obtenidos:', res);
         this.pedidoServ.pedidos = res.data;
-        this.pedidosFiltrados = [...this.pedidoServ.pedidos];
+        this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
+        this.notifServ.programarAvisosEntrega(this.pedidoServ.pedidos);
       })
       .catch(err => {
         console.error('Error al obtener los pedidos:', err);
@@ -193,12 +196,12 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     console.log('Código detectado:', codigo);
 
     let encontrado = false;
-    this.pedidosFiltrados = this.pedidoServ.pedidos.filter(
+    this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(
       (pedido) => {
         String(pedido.barCode) === String(codigo) ? (encontrado = true) : false;
         return String(pedido.barCode) === String(codigo);
       }
-    );
+    ));
 
     if (!encontrado) {
       const alert = await this.alertCtrl.create({
@@ -207,12 +210,12 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
         buttons: ['Aceptar']
       });
       await alert.present();
-      this.pedidosFiltrados = this.pedidoServ.pedidos;
+      this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
     }
   }
 
   ionViewWillEnter() {
-    this.pedidosFiltrados = [...this.pedidoServ.pedidos];
+    this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
   }
 
   async openAcciones(pedido: IPedido) {
@@ -315,7 +318,8 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
                   this.pedidoServ.pedidos = this.pedidoServ.pedidos.filter(
                     p => parseInt(p.barCode) !== parseInt(pedido.barCode)
                   );
-                  this.pedidosFiltrados = [...this.pedidoServ.pedidos];
+                  this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
+                  this.notifServ.programarAvisosEntrega(this.pedidoServ.pedidos);
                   console.log('Después de eliminar:', this.pedidosFiltrados);
                 });
               })
@@ -344,6 +348,55 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /** Ordena los pedidos por proximidad de entrega (más próximos primero). Los entregados y sin fecha válida van al final. */
+  private ordenarPorEntrega(pedidos: IPedido[]): IPedido[] {
+    return [...pedidos].sort((a, b) => {
+      const aEntregado = a.estatus === "Entregado";
+      const bEntregado = b.estatus === "Entregado";
+      if (aEntregado !== bEntregado) return aEntregado ? 1 : -1;
+
+      const aTime = new Date(a.deliveryAt).getTime();
+      const bTime = new Date(b.deliveryAt).getTime();
+      const aValid = !isNaN(aTime);
+      const bValid = !isNaN(bTime);
+      if (aValid !== bValid) return aValid ? -1 : 1;
+      if (!aValid && !bValid) return 0;
+
+      return aTime - bTime;
+    });
+  }
+
+  private msHastaEntrega(pedido: IPedido): number | null {
+    if (!pedido.deliveryAt) return null;
+    const time = new Date(pedido.deliveryAt).getTime();
+    return isNaN(time) ? null : time - Date.now();
+  }
+
+  getEntregaColor(pedido: IPedido): string {
+    if (pedido.estatus === "Entregado") return "medium";
+    const ms = this.msHastaEntrega(pedido);
+    if (ms === null) return "medium";
+    if (ms <= 30 * 60 * 1000) return "danger";     // vencido o falta <= 30 min
+    if (ms <= 2 * 60 * 60 * 1000) return "warning"; // falta <= 2 horas
+    if (ms <= 24 * 60 * 60 * 1000) return "primary"; // falta <= 1 día
+    return "success";
+  }
+
+  getEntregaTexto(pedido: IPedido): string {
+    const ms = this.msHastaEntrega(pedido);
+    if (ms === null) return "";
+    if (ms <= 0) return "Vencido";
+
+    const minutos = Math.round(ms / 60000);
+    if (minutos < 60) return `En ${minutos} min`;
+
+    const horas = Math.round(minutos / 60);
+    if (horas < 24) return `En ${horas} h`;
+
+    const dias = Math.round(horas / 24);
+    return `En ${dias} d`;
+  }
+
 
   irDetalle(bar_code: string) {
     this.router.navigate(['/detalles', bar_code]);
@@ -357,15 +410,15 @@ export class ListaPedidosComponent implements OnInit, AfterViewInit {
   filtrarPedidos(event: any) {
     const val = (event.target.value || '') + "".toLowerCase();
     if (!val) {
-      this.pedidosFiltrados = [...this.pedidoServ.pedidos];
+      this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos);
       return;
     }
 
-    this.pedidosFiltrados = this.pedidoServ.pedidos.filter(p =>
+    this.pedidosFiltrados = this.ordenarPorEntrega(this.pedidoServ.pedidos.filter(p =>
       (p.barCode + "").toLowerCase().includes(val) ||
       (p.cliente.nombre + "").toLowerCase().includes(val) ||
       (p.cliente.telefono + "" || '').toLowerCase().includes(val)
-    );
+    ));
   }
 
 }
