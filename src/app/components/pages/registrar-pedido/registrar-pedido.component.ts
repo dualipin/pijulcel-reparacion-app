@@ -13,7 +13,7 @@ import { PedidoService } from 'src/app/services/pedido.service';
 import {
   IonButton, IonIcon, IonInput, IonItem, IonLabel, IonTextarea, IonSpinner,
   IonRefresher, IonRefresherContent, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
-  IonText
+  IonText, IonSelect, IonSelectOption
 
 } from '@ionic/angular/standalone';
 
@@ -25,7 +25,7 @@ import {
     IonicModule, CommonModule,
     ReactiveFormsModule, FormsModule, IonCard, IonCardHeader, IonCardTitle, IonCardContent,
     IonInput, IonTextarea, IonButton, IonIcon, IonSpinner,
-    IonRefresher, IonRefresherContent, IonText
+    IonRefresher, IonRefresherContent, IonText, IonSelect, IonSelectOption
   ]
 })
 export class RegistrarPedidoComponent {
@@ -45,6 +45,8 @@ export class RegistrarPedidoComponent {
   readonly MAX_IMAGENES = 4;
 
   minDeliveryDate: string;
+
+  readonly horasEntrega: string[] = Array.from({ length: 24 }, (_, h) => `${h.toString().padStart(2, '0')}:00`);
 
   constructor(
     private fb: FormBuilder,

@@ -28,7 +28,7 @@ if (platform === "web") {
 bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideIonicAngular(),
+    provideIonicAngular({ mode: 'md' }),
     provideHttpClient(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
   ],

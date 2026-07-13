@@ -59,9 +59,10 @@
           <ion-input class="item-form" fill="outline" formControlName="delivery_date" type="date"
             [min]="minDeliveryDate" style="flex: 1;">
           </ion-input>
-          <ion-input class="item-form" fill="outline" formControlName="delivery_time" type="time"
-            style="flex: 1;">
-          </ion-input>
+          <ion-select class="item-form" fill="outline" formControlName="delivery_time" placeholder="Hora"
+            label-placement="floating" style="flex: 1;">
+            <ion-select-option *ngFor="let hora of horasEntrega" [value]="hora">{{ hora }}</ion-select-option>
+          </ion-select>
         </div>
 
       </ion-card-content>
